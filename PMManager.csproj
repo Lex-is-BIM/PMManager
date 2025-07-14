@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+	<ItemGroup>
+		<COMFileReference Include="..\..\RengaSDK\tlb\RengaCOMAPI.tlb">
+		</COMFileReference>
+	</ItemGroup>
+	<ItemGroup>
+		<Reference Include="Renga.NET8.PluginUtility">
+			<HintPath>..\..\RengaSDK\Net\Renga.NET8.PluginUtility.dll</HintPath>
+		</Reference>
+		<Reference Include="Renga.WPF.Styles">
+			<HintPath>..\..\RengaSDK\WpfStyle\Renga.WPF.Styles.dll</HintPath>
+		</Reference>
+	</ItemGroup>
+	<ItemGroup>
+	  <None Update="i24_PM_Materials.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="i24_PM_Propertis.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="PMManager.rndesc">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
+
+</Project>
