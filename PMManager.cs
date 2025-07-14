@@ -217,6 +217,12 @@ namespace PMManager
                 return;
             }
 
+            // Добавляем подтверждение удаления
+            string message = $"Будет удалено {selectedProperties.Count} {GetNounForm(selectedProperties.Count, "свойство", "свойства", "свойств")}";
+            if (!ConfirmAction("Подтверждение удаления", message))
+            {
+                return; // Пользователь отменил удаление
+            }
             ExecuteOperation(() =>
             {
                 foreach (var prop in selectedProperties)
@@ -224,6 +230,9 @@ namespace PMManager
                     _app.Project.PropertyManager.UnregisterPropertyS(prop.Guid);
                 }
             });
+
+            //ShowMessage("Удаление завершено",
+            //    $"Удалено {selectedProperties.Count} {GetNounForm(selectedProperties.Count, "свойство", "свойства", "свойств")}");
         }
 
         private void ExportProperties()
