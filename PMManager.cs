@@ -13,7 +13,7 @@ using System.Collections.ObjectModel;
 
 namespace PMManager
 {
-    public sealed class PMStateKeeper : IPlugin
+    public sealed class PMManager : IPlugin
     {
         // 1. Константы и поля
         private string _pluginFolder;
@@ -150,7 +150,7 @@ namespace PMManager
 
             CreatePropertiesPanelExtension(_app, ui);
             //CreateMaterialsPanelExtension(ui);
-        }
+        } 
 
         private IAction CreateAction(IUI ui, string displayName, Action handler)
         {

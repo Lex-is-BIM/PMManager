@@ -13,8 +13,8 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using static PMManager.PMStateKeeper;
-using static PMManager.PMStateKeeper.Property;
+using static PMManager.PMManager;
+using static PMManager.PMManager.Property;
 
 namespace PMManager
 {
