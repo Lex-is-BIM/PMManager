@@ -10,6 +10,7 @@ using System.Windows;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Collections.ObjectModel;
+using System.Text.Json.Serialization;
 
 namespace PMManager
 {
@@ -17,7 +18,7 @@ namespace PMManager
     {
         // 1. Константы и поля
         private string _pluginFolder;
-        private const string MessageHeader = "PMStateKeeper";
+        private const string MessageHeader = "PMManager";
         private ApplicationEventSource _appEvents;
         private readonly List<ActionEventSource> _eventSources = new();
         private readonly Renga.Application _app = new();
@@ -208,30 +209,28 @@ namespace PMManager
         {
             try
             {
-                // Создаем новый список и заполняем всеми свойствами проекта
-                var propertiesToExport = new List<Property>(GetAllProperties(_app));
+                // Получаем список свойств с возможностью выбора
+                var selectedProperties = SelectProperties(GetAllProperties(_app));
 
-                // Сохраняем свойства из временного списка
-                bool success = SavePropertiesToFile(propertiesToExport);
+                if (selectedProperties.Count == 0)
+                {
+                    ShowMessage("Отмена экспорта", "Нет выбранных свойств для экспорта");
+                    return;
+                }
+
+                // Сохраняем только выбранные свойства
+                bool success = SavePropertiesToFile(selectedProperties);
 
                 if (success)
                 {
-                    System.Windows.MessageBox.Show(
-                        $"Экспортировано {propertiesToExport.Count} {GetNounForm(propertiesToExport.Count, "свойство", "свойства", "свойств")}",
-                        "Экспорт завершен",
-                        System.Windows.MessageBoxButton.OK,
-                        System.Windows.MessageBoxImage.Information
-                    );
+                    ShowMessage("Экспорт завершен",
+                        $"Экспортировано {selectedProperties.Count} {GetNounForm(selectedProperties.Count, "свойство", "свойства", "свойств")}");
                 }
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show(
-                    $"Ошибка при экспорте свойств: {ex.Message}",
-                    "Ошибка экспорта",
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Error
-                );
+                ShowMessage("Ошибка экспорта",
+                    $"Ошибка при экспорте свойств: {ex.Message}");
             }
         }
 
@@ -269,17 +268,32 @@ namespace PMManager
                     return;
                 }
 
-                // Создаем только новые свойства
-                CreateProperties(_app, newProperties);
+                // Показываем список новых свойств пользователю для выбора
+                List<Property> selectedProperties = SelectProperties(newProperties);
 
-                // Показываем информацию о пропущенных свойствах (которые уже есть в проекте)
-                int skippedCount = loadedProperties.Count - newProperties.Count;
-                string message = $"Импортировано {newProperties.Count} {GetNounForm(newProperties.Count, "новое свойство", "новых свойства", "новых свойств")}";
+                if (selectedProperties.Count == 0)
+                {
+                    ShowMessage("Отмена импорта",
+                        "Импорт отменен пользователем.");
+                    return;
+                }
+
+                // Создаем только выбранные свойства
+                CreateProperties(_app, selectedProperties);
+
+                // Показываем информацию о пропущенных свойствах
+                // Считаем только те свойства, которые пользователь выбрал, но которые уже существуют
+                int skippedCount = loadedProperties
+                    .Where(prop => selectedProperties.Any(selected => selected.Guid == prop.Guid)
+                                 && currentProperties.Any(current => current.Guid == prop.Guid))
+                    .Count();
+
+                string message = $"Импортировано {selectedProperties.Count} {GetNounForm(selectedProperties.Count, "новое свойство", "новых свойства", "новых свойств")}";
 
                 if (skippedCount > 0)
                 {
-                    message += $"\nПропущено {skippedCount} {GetNounForm(skippedCount, "существующее свойство", "существующих свойства", "существующих свойств")} " +
-                               "(уже есть в проекте)";
+                    message += $"\nПропущено {skippedCount} {GetNounForm(skippedCount, "свойство", "свойства", "свойств")} " +
+                               "(уже существуют в проекте)";
                 }
 
                 ShowMessage("Импорт завершен", message);
@@ -322,7 +336,6 @@ namespace PMManager
                         }
                     }
                 }
-                ShowMessage("Импорт свойств свойств", "Свойства успешно импортированы");
             });
 
         }
@@ -336,12 +349,14 @@ namespace PMManager
                 System.Windows.MessageBoxImage.Question) == System.Windows.MessageBoxResult.Yes;
         }
 
-        private void ShowMessage(string title, string message)
+        public static void ShowMessage(string title, string message)
         {
-            System.Windows.MessageBox.Show(message,
+            System.Windows.MessageBox.Show(
+                message,
                 $"{MessageHeader}: {title}",
                 System.Windows.MessageBoxButton.OK,
-                System.Windows.MessageBoxImage.Information);
+                System.Windows.MessageBoxImage.Information
+            );
         }
 
         private string GetNounForm(int number, string one, string twoFour, string fiveMore)
@@ -427,6 +442,9 @@ namespace PMManager
             List<Property> properties,
             string defaultFileName = "properties")
         {
+            if (properties.Count == 0)
+                return false;
+
             var saveFileDialog = new SaveFileDialog
             {
                 FileName = defaultFileName,
@@ -439,18 +457,26 @@ namespace PMManager
             if (saveFileDialog.ShowDialog() != true)
                 return false;
 
-            // Убрана обработка исключений - пробрасываем ошибки наружу
-            var options = new JsonSerializerOptions
+            try
             {
-                WriteIndented = true,
-                Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            };
+                var options = new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
 
-            string jsonString = JsonSerializer.Serialize(properties, options);
-            File.WriteAllText(saveFileDialog.FileName, jsonString);
-
-            return true;
+                string jsonString = JsonSerializer.Serialize(properties, options);
+                File.WriteAllText(saveFileDialog.FileName, jsonString);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // Добавляем обработку исключений
+                ShowMessage("Ошибка сохранения",
+                    $"Не удалось сохранить файл: {ex.Message}");
+                return false;
+            }
         }
 
         private void OnProjectCreated() => InitializeProjectData();
@@ -550,6 +576,7 @@ namespace PMManager
             public ObjectType[] ObjectTypes { get; init; } = Array.Empty<ObjectType>();
 
             // Единственное редактируемое свойство
+            [JsonIgnore]
             public bool IsSelected
             {
                 get => _isSelected;
@@ -595,6 +622,5 @@ namespace PMManager
                 public bool CSVExportFlag { get; init; }
             }
         }
-
     }
 }
