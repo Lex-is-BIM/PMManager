@@ -194,11 +194,32 @@ namespace PMManager
         // 5. Методы для работы со свойствами
         private void RemoveProperties()
         {
-            var selectProperties = SelectProperties(GetAllProperties(_app));
+            // Сначала проверяем наличие свойств в проекте
+            var allProperties = GetAllProperties(_app);
+            if (allProperties.Count == 0)
+            {
+                ShowMessage("Нет свойств", "В проекте нет доступных свойств для удаления");
+                return;
+            }
+
+            // Получаем список свойств с возможностью выбора
+            var selectedProperties = SelectProperties(allProperties);
+
+            // Проверяем на отмену
+            if (selectedProperties == null)
+            {
+                return; // Просто выходим без сообщения
+            }
+
+            if (selectedProperties.Count == 0)
+            {
+                ShowMessage("Отмена удаления", "Нет выбранных свойств для удаления");
+                return;
+            }
 
             ExecuteOperation(() =>
             {
-                foreach (var prop in selectProperties)
+                foreach (var prop in selectedProperties)
                 {
                     _app.Project.PropertyManager.UnregisterPropertyS(prop.Guid);
                 }
@@ -209,8 +230,22 @@ namespace PMManager
         {
             try
             {
+                // Сначала проверяем наличие свойств в проекте
+                var allProperties = GetAllProperties(_app);
+                if (allProperties.Count == 0)
+                {
+                    ShowMessage("Нет свойств", "В проекте нет доступных свойств для экспорта");
+                    return;
+                }
+
                 // Получаем список свойств с возможностью выбора
-                var selectedProperties = SelectProperties(GetAllProperties(_app));
+                var selectedProperties = SelectProperties(allProperties);
+
+                // Проверяем на отмену
+                if (selectedProperties == null)
+                {
+                    return; // Просто выходим без сообщения
+                }
 
                 if (selectedProperties.Count == 0)
                 {
@@ -269,12 +304,18 @@ namespace PMManager
                 }
 
                 // Показываем список новых свойств пользователю для выбора
-                List<Property> selectedProperties = SelectProperties(newProperties);
+                List<Property>? selectedProperties = SelectProperties(newProperties);
+
+                // Добавляем проверку на отмену
+                if (selectedProperties == null)
+                {
+                    return; // Просто выходим без сообщения
+                }
 
                 if (selectedProperties.Count == 0)
                 {
                     ShowMessage("Отмена импорта",
-                        "Импорт отменен пользователем.");
+                        "Не выбрано ни одного свойства для добавления.");
                     return;
                 }
 
@@ -425,17 +466,18 @@ namespace PMManager
             //_existingMaterials = GetAllMaterials(_app);
         }
 
-        public List<Property> SelectProperties(List<Property> properties)
+        public List<Property>? SelectProperties(List<Property> properties)
         {
             ObservableCollection<Property> observableCollection = new ObservableCollection<Property>(properties);
             var dialog = new PropertySelectorDialog(observableCollection);
 
+            // Если пользователь нажал "Отмена", возвращаем null
             if (dialog.ShowDialog() == true)
             {
                 return dialog.SelectedProperties.ToList();
             }
 
-            return new List<Property>();
+            return null;
         }
 
         public static bool SavePropertiesToFile(
