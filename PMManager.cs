@@ -23,7 +23,6 @@ namespace PMManager
         private readonly Renga.Application _app = new();
         private static readonly Dictionary<string, string> ObjectTypeNames = new()
         {
-            // Типы объектов (отсортировано по русским названиям)
             ["67a0b42c-8c1e-47e8-b46e-78d8bb260de0"] = "3D-модели",
             ["47d0d93f-3c7b-4269-bf8a-de246e1724d0"] = "Аксессуары воздуховода",
             ["41e2788a-49ed-487f-9ae1-55b6e09ae6e5"] = "Аксессуары трубопровода",
@@ -191,10 +190,6 @@ namespace PMManager
             ui.AddExtensionToPrimaryPanel(panelExtension);
         }
 
-        private void OnProjectCreated() => InitializeProjectData();
-
-        private void OnProjectOpened(string filePath) => InitializeProjectData();
-
         // 5. Методы для работы со свойствами
         private void RemoveProperties()
         {
@@ -211,14 +206,126 @@ namespace PMManager
 
         private void ExportProperties()
         {
-            ShowMessage("Экспорт", "Экспорт свойств");
+            try
+            {
+                // Создаем новый список и заполняем всеми свойствами проекта
+                var propertiesToExport = new List<Property>(GetAllProperties(_app));
+
+                // Сохраняем свойства из временного списка
+                bool success = SavePropertiesToFile(propertiesToExport);
+
+                if (success)
+                {
+                    System.Windows.MessageBox.Show(
+                        $"Экспортировано {propertiesToExport.Count} {GetNounForm(propertiesToExport.Count, "свойство", "свойства", "свойств")}",
+                        "Экспорт завершен",
+                        System.Windows.MessageBoxButton.OK,
+                        System.Windows.MessageBoxImage.Information
+                    );
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(
+                    $"Ошибка при экспорте свойств: {ex.Message}",
+                    "Ошибка экспорта",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Error
+                );
+            }
         }
 
         private void ImportProperties()
         {
-            ShowMessage("Импорт", "Импорт свойств");
+            try
+            {
+                List<Property> loadedProperties = LoadPropertiesFromFile();
+
+                if (loadedProperties == null)
+                {
+                    // Пользователь отменил диалог
+                    return;
+                }
+
+                if (loadedProperties.Count == 0)
+                {
+                    ShowMessage("Пустой файл",
+                        "Файл не содержит свойств или данные не распознаны.");
+                    return;
+                }
+
+                // Получаем текущие свойства проекта
+                List<Property> currentProperties = GetAllProperties(_app);
+
+                // Фильтруем только те свойства, которых нет в проекте
+                List<Property> newProperties = loadedProperties
+                    .Where(loadedProp => !currentProperties.Any(currentProp => currentProp.Guid == loadedProp.Guid))
+                    .ToList();
+
+                if (newProperties.Count == 0)
+                {
+                    ShowMessage("Нет новых свойств",
+                        "Все свойства из файла уже существуют в проекте.");
+                    return;
+                }
+
+                // Создаем только новые свойства
+                CreateProperties(_app, newProperties);
+
+                // Показываем информацию о пропущенных свойствах (которые уже есть в проекте)
+                int skippedCount = loadedProperties.Count - newProperties.Count;
+                string message = $"Импортировано {newProperties.Count} {GetNounForm(newProperties.Count, "новое свойство", "новых свойства", "новых свойств")}";
+
+                if (skippedCount > 0)
+                {
+                    message += $"\nПропущено {skippedCount} {GetNounForm(skippedCount, "существующее свойство", "существующих свойства", "существующих свойств")} " +
+                               "(уже есть в проекте)";
+                }
+
+                ShowMessage("Импорт завершен", message);
+            }
+            catch (Exception ex)
+            {
+                ShowMessage("Ошибка импорта",
+                    $"Ошибка при импорте свойств: {ex.Message}");
+            }
         }
 
+        private void CreateProperties(IApplication app, List<Property> properties)
+        {
+            IProject project = app.Project;
+            IPropertyManager propertyManager = project.PropertyManager;
+            ExecuteOperation(() =>
+            {
+                foreach (var property in properties)
+                {
+                    PropertyType propertyType = (PropertyType)Enum.Parse(typeof(PropertyType), property.Type);
+                    IPropertyDescription propertyDescription = propertyManager.CreatePropertyDescription(property.Name, propertyType);
+                    if (property.Enumerations.Length > 0)
+                    {
+                        Array enumArray = property.Enumerations.ToArray();
+                        propertyDescription.SetEnumerationItems(enumArray);
+                    }
+
+                    propertyManager.RegisterPropertyS2(property.Guid, propertyDescription);
+
+                    if (property.ObjectTypes.Length > 0)
+                    {
+                        foreach (var objType in property.ObjectTypes)
+                        {
+                            propertyManager.AssignPropertyToTypeS(property.Guid, objType.Guid);
+                            propertyManager.SetCSVExportFlagS(property.Guid, objType.Guid, objType.CSVExportFlag);
+                            if (objType.Expression != null)
+                            {
+                                propertyManager.SetExpressionS(property.Guid, objType.Guid, objType.Expression);
+                            }
+                        }
+                    }
+                }
+                ShowMessage("Импорт свойств свойств", "Свойства успешно импортированы");
+            });
+
+        }
 
         // 8. Вспомогательные методы
         private bool ConfirmAction(string title, string message)
@@ -235,6 +342,23 @@ namespace PMManager
                 $"{MessageHeader}: {title}",
                 System.Windows.MessageBoxButton.OK,
                 System.Windows.MessageBoxImage.Information);
+        }
+
+        private string GetNounForm(int number, string one, string twoFour, string fiveMore)
+        {
+            int lastDigit = number % 10;
+            int lastTwoDigits = number % 100;
+
+            if (lastTwoDigits >= 11 && lastTwoDigits <= 14)
+                return fiveMore;
+
+            if (lastDigit == 1)
+                return one;
+
+            if (lastDigit >= 2 && lastDigit <= 4)
+                return twoFour;
+
+            return fiveMore;
         }
 
         private void ExecuteOperation(Action action)
@@ -299,6 +423,42 @@ namespace PMManager
             return new List<Property>();
         }
 
+        public static bool SavePropertiesToFile(
+            List<Property> properties,
+            string defaultFileName = "properties")
+        {
+            var saveFileDialog = new SaveFileDialog
+            {
+                FileName = defaultFileName,
+                DefaultExt = ".json",
+                Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
+                AddExtension = true
+            };
+
+            // Возвращаем false если пользователь отменил диалог
+            if (saveFileDialog.ShowDialog() != true)
+                return false;
+
+            // Убрана обработка исключений - пробрасываем ошибки наружу
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
+
+            string jsonString = JsonSerializer.Serialize(properties, options);
+            File.WriteAllText(saveFileDialog.FileName, jsonString);
+
+            return true;
+        }
+
+        private void OnProjectCreated() => InitializeProjectData();
+
+        private void OnProjectOpened(string filePath) => InitializeProjectData();
+
+        // 10. Статические методы получения данных
+
         private List<Property> GetAllProperties(IApplication app)
         {
             var propertyManager = app.Project.PropertyManager;
@@ -346,6 +506,35 @@ namespace PMManager
                 });
             }
             return propertiesList;
+        }
+
+        private List<Property> LoadPropertiesFromFile()
+        {
+            var openFileDialog = new OpenFileDialog
+            {
+                DefaultExt = ".json",
+                Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
+                Title = "Выберите файл свойств для импорта"
+            };
+
+            if (openFileDialog.ShowDialog() != true)
+                return null;
+
+            try
+            {
+                string jsonString = File.ReadAllText(openFileDialog.FileName);
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
+
+                return JsonSerializer.Deserialize<List<Property>>(jsonString, options);
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException($"Ошибка чтения файла {openFileDialog.FileName}: {ex.Message}", ex);
+            }
         }
 
         // Классы
