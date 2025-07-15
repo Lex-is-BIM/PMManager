@@ -110,6 +110,21 @@ namespace PMManager
             ["b00d5c25-92a8-4409-a3b7-7c37ed792c06"] = "Электроустановочные изделия",
             ["e1e3bd66-2e13-4fa4-a9eb-677e03067c2f"] = "Элементы"
         };
+        private static readonly Dictionary<PropertyType, string> TypeNames = new()
+        {
+            { PropertyType.PropertyType_Undefined, "Неопределенный" },
+            { PropertyType.PropertyType_Double, "Действительное число" },
+            { PropertyType.PropertyType_String, "Строка" },
+            { PropertyType.PropertyType_Angle, "Угол" },
+            { PropertyType.PropertyType_Area, "Площадь" },
+            { PropertyType.PropertyType_Boolean, "Логическое" },
+            { PropertyType.PropertyType_Enumeration, "Перечисление" },
+            { PropertyType.PropertyType_Integer, "Целое" },
+            { PropertyType.PropertyType_Length, "Длина" },
+            { PropertyType.PropertyType_Logical, "Логическое" },
+            { PropertyType.PropertyType_Mass, "Масса" },
+            { PropertyType.PropertyType_Volume, "Объем" }
+        };
 
         // 2. Основные методы плагина
         public bool Initialize(string pluginFolder)
@@ -562,7 +577,7 @@ namespace PMManager
 
                 // Обработка перечислений
                 string[] enumerations = Array.Empty<string>();
-                if (description.Type.ToString() == "PropertyType_Enumeration")
+                if (description.Type == PropertyType.PropertyType_Enumeration)
                 {
                     Array enumArray = description.GetEnumerationItems();
                     enumerations = enumArray.Cast<string>().ToArray();
@@ -584,11 +599,12 @@ namespace PMManager
                     }
                 }
 
+                // Используем словарь для получения корректного названия типа
                 propertiesList.Add(new Property
                 {
                     Guid = propGuid,
                     Name = propertyManager.GetPropertyNameS(propGuid),
-                    Type = description.Type.ToString(),
+                    Type = TypeNames[description.Type], // Здесь происходит преобразование
                     Enumerations = enumerations,
                     ObjectTypes = objectTypes.ToArray()
                 });
