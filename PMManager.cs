@@ -602,7 +602,7 @@ namespace PMManager
                 // Используем словарь для получения корректного названия типа
                 propertiesList.Add(new Property
                 {
-                    Guid = propGuid,
+                    Guid = propGuid.ToLower(),
                     Name = propertyManager.GetPropertyNameS(propGuid),
                     Type = TypeNames[description.Type], // Здесь происходит преобразование
                     Enumerations = enumerations,

@@ -81,7 +81,7 @@
             <!-- Колонки -->
             <DataGrid.Columns>
                 <!-- Колонка с чекбоксом -->
-                <DataGridTemplateColumn Header="Имя" Width="175" SortMemberPath="Name">
+                <DataGridTemplateColumn Header="Имя" Width="240" SortMemberPath="Name">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
@@ -97,7 +97,7 @@
                 </DataGridTemplateColumn>
 
                 <!-- Текстовые колонки с отступом -->
-                <DataGridTextColumn Header="Тип данных" Binding="{Binding Type}" Width="80">
+                <DataGridTextColumn Header="Тип данных" Binding="{Binding Type}" Width="140">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="Margin" Value="3,0,0,0"/>
@@ -106,7 +106,7 @@
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
 
-                <DataGridTextColumn Header="Уникальный идентификатор" Binding="{Binding Guid}" Width="220">
+                <DataGridTextColumn Header="Уникальный идентификатор" Binding="{Binding Guid}" Width="250">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="Margin" Value="3,0,0,0"/>
