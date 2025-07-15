@@ -117,11 +117,11 @@ namespace PMManager
             { PropertyType.PropertyType_String, "Строка" },
             { PropertyType.PropertyType_Angle, "Угол" },
             { PropertyType.PropertyType_Area, "Площадь" },
-            { PropertyType.PropertyType_Boolean, "Логическое" },
+            { PropertyType.PropertyType_Boolean, "Булевый" },
             { PropertyType.PropertyType_Enumeration, "Перечисление" },
-            { PropertyType.PropertyType_Integer, "Целое" },
+            { PropertyType.PropertyType_Integer, "Целое число" },
             { PropertyType.PropertyType_Length, "Длина" },
-            { PropertyType.PropertyType_Logical, "Логическое" },
+            { PropertyType.PropertyType_Logical, "Логический" },
             { PropertyType.PropertyType_Mass, "Масса" },
             { PropertyType.PropertyType_Volume, "Объем" }
         };
@@ -393,12 +393,24 @@ namespace PMManager
         {
             IProject project = app.Project;
             IPropertyManager propertyManager = project.PropertyManager;
+
+            // Создаем обратный словарь для быстрого поиска по значению
+            var reverseTypeNames = TypeNames.ToDictionary(x => x.Value, x => x.Key);
+
             ExecuteOperation(() =>
             {
                 foreach (var property in properties)
                 {
-                    PropertyType propertyType = (PropertyType)Enum.Parse(typeof(PropertyType), property.Type);
+                    // Пытаемся найти соответствующий PropertyType по строковому описанию
+                    if (!reverseTypeNames.TryGetValue(property.Type, out PropertyType propertyType))
+                    {
+                        // Если не нашли, используем значение по умолчанию
+                        propertyType = PropertyType.PropertyType_Undefined;
+                        // Можно добавить логгирование ошибки здесь
+                    }
+
                     IPropertyDescription propertyDescription = propertyManager.CreatePropertyDescription(property.Name, propertyType);
+
                     if (property.Enumerations.Length > 0)
                     {
                         Array enumArray = property.Enumerations.ToArray();
@@ -421,7 +433,6 @@ namespace PMManager
                     }
                 }
             });
-
         }
 
         // 8. Вспомогательные методы
