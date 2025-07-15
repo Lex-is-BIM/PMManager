@@ -15,7 +15,7 @@
 			<HintPath>..\..\RengaSDK\Net\Renga.NET8.PluginUtility.dll</HintPath>
 		</Reference>
 		<Reference Include="Renga.WPF.Styles">
-			<HintPath>..\..\RengaSDK\WpfStyle\Renga.WPF.Styles.dll</HintPath>
+		  <HintPath>..\..\RengaSDK\WpfStyle\Renga.WPF.Styles.dll</HintPath>
 		</Reference>
 	</ItemGroup>
 	<ItemGroup>

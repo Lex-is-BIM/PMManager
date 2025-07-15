@@ -11,10 +11,11 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
+using System.Reflection;
 
 namespace PMManager
 {
-    public sealed class PMManager : IPlugin
+    public class PMManager : IPlugin
     {
         // 1. Константы и поля
         private string _pluginFolder;
@@ -114,6 +115,16 @@ namespace PMManager
         public bool Initialize(string pluginFolder)
         {
             _pluginFolder = pluginFolder;
+            AppDomain.CurrentDomain.AssemblyResolve += (sender, e) =>
+            {
+                var missingName = new AssemblyName(e.Name);
+                var missingPath = Path.Combine(_pluginFolder, missingName.Name + ".dll");
+
+                if (File.Exists(missingPath))
+                    return Assembly.LoadFrom(missingPath);
+                else
+                    return null;
+            };            
             InitializeEvents();
             InitializeUI();
             return true;
