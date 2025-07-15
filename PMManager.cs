@@ -202,6 +202,7 @@ namespace PMManager
             IAction removePropertiesAction = CreateAction(ui, "Удалить свойства", RemoveProperties);
             IAction exportPropertiesAction = CreateAction(ui, "Экспортировать свойства", ExportProperties);
             IAction importPropertiesAction = CreateAction(ui, "Импортировать свойства", ImportProperties);
+            IAction configureExclusionListAction = CreateAction(ui, "Настройка списка исключений", ConfigureExclusionList);
 
             // Создаем DropDownButton 
             var dropDownButton = CreateDropDownButton(
@@ -210,7 +211,8 @@ namespace PMManager
                 propertyImage,
                 removePropertiesAction,
                 exportPropertiesAction,
-                importPropertiesAction);
+                importPropertiesAction,
+                configureExclusionListAction);
 
             // Добавляем DropDownButton на панель
             panelExtension.AddDropDownButton(dropDownButton);
@@ -387,6 +389,40 @@ namespace PMManager
                 ShowMessage("Ошибка импорта",
                     $"Ошибка при импорте свойств: {ex.Message}");
             }
+        }
+
+        private void ConfigureExclusionList()
+        {
+            // Получаем все свойства проекта
+            var allProperties = GetAllProperties(_app);
+
+            // Если свойств нет, показываем сообщение
+            if (allProperties.Count == 0)
+            {
+                ShowMessage("Нет свойств", "В проекте нет доступных свойств для настройки");
+                return;
+            }
+
+            // Устанавливаем начальное состояние флажков
+            foreach (var prop in allProperties)
+            {
+                prop.IsSelected = _savedProperties.Any(sp => sp.Guid == prop.Guid);
+            }
+
+            // Открываем диалоговое окно настройки
+            var dialog = new PropertySelectorDialog(new ObservableCollection<Property>(allProperties));
+
+            // Показываем окно
+            if (dialog.ShowDialog() == true)
+            {
+                // Обновляем список сохраненных свойств
+                _savedProperties.Clear();
+                _savedProperties.AddRange(dialog.SelectedProperties);
+            }
+
+            // Показываем подтверждение
+            ShowMessage("Настройки сохранены",
+                $"Настроено {_savedProperties.Count} {GetNounForm(_savedProperties.Count, "свойство", "свойства", "свойств")}");
         }
 
         private void CreateProperties(IApplication app, List<Property> properties)
