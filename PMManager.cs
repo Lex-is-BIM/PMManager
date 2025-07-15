@@ -410,7 +410,7 @@ namespace PMManager
             }
 
             // Открываем диалоговое окно настройки
-            var dialog = new PropertySelectorDialog(new ObservableCollection<Property>(allProperties));
+            var dialog = new PropertySelectorDialog(new ObservableCollection<Property>(allProperties), "Настройка списка исключений");
 
             // Показываем окно
             if (dialog.ShowDialog() == true)
@@ -568,7 +568,7 @@ namespace PMManager
             }
 
             ObservableCollection<Property> observableCollection = new ObservableCollection<Property>(properties);
-            var dialog = new PropertySelectorDialog(observableCollection);
+            var dialog = new PropertySelectorDialog(observableCollection, "Выбор свойств");
 
             if (dialog.ShowDialog() == true)
             {

@@ -24,11 +24,14 @@ namespace PMManager
     public partial class PropertySelectorDialog : Window
     {
         private readonly ObservableCollection<Property> _properties;
+        private readonly string _title;
 
-        public PropertySelectorDialog(ObservableCollection<Property> properties)
+        public PropertySelectorDialog(ObservableCollection<Property> properties, string title)
         {
             InitializeComponent();
             _properties = properties ?? throw new ArgumentNullException(nameof(properties));
+            _title = title;
+            Title = _title; // Устанавливаем заголовок окна
             PropertiesData.ItemsSource = _properties;
         }
 
@@ -112,6 +115,6 @@ namespace PMManager
         {
             throw new NotImplementedException();
         }
-
     }
 }
+
