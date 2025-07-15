@@ -19,7 +19,6 @@ namespace PMManager
     {
         // 1. Константы и поля
         private string _pluginFolder;
-        private const string MessageHeader = "PMManager";
         private ApplicationEventSource _appEvents;
         private readonly List<ActionEventSource> _eventSources = new();
         private readonly Renga.Application _app = new();
@@ -417,22 +416,16 @@ namespace PMManager
         }
 
         // 8. Вспомогательные методы
-        private bool ConfirmAction(string title, string message)
+        public static bool ConfirmAction(string title, string message)
         {
-            return System.Windows.MessageBox.Show(message,
-                $"{MessageHeader}: {title}",
-                System.Windows.MessageBoxButton.YesNo,
-                System.Windows.MessageBoxImage.Question) == System.Windows.MessageBoxResult.Yes;
+            var dialog = new CustomMessageBoxDouble(title, message);
+            return dialog.ShowDialog() ?? false;
         }
 
         public static void ShowMessage(string title, string message)
         {
-            System.Windows.MessageBox.Show(
-                message,
-                $"{MessageHeader}: {title}",
-                System.Windows.MessageBoxButton.OK,
-                System.Windows.MessageBoxImage.Information
-            );
+            var dialog = new CustomMessageBoxSingle(title, message);
+            dialog.ShowDialog();
         }
 
         private string GetNounForm(int number, string one, string twoFour, string fiveMore)
@@ -700,5 +693,6 @@ namespace PMManager
                 public bool CSVExportFlag { get; init; }
             }
         }
+
     }
 }
