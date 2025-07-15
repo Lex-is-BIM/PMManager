@@ -22,6 +22,7 @@ namespace PMManager
         private ApplicationEventSource _appEvents;
         private readonly List<ActionEventSource> _eventSources = new();
         private readonly Renga.Application _app = new();
+        private List<Property> _savedProperties = new();
         private static readonly Dictionary<string, string> ObjectTypeNames = new()
         {
             ["67a0b42c-8c1e-47e8-b46e-78d8bb260de0"] = "3D-модели",
@@ -155,6 +156,7 @@ namespace PMManager
             _appEvents.ProjectCreated += OnProjectCreated;
             _appEvents.ProjectOpened += OnProjectOpened;
         }
+
         private void CleanupEvents()
         {
             foreach (var eventSource in _eventSources)
@@ -248,6 +250,13 @@ namespace PMManager
             {
                 return; // Пользователь отменил удаление
             }
+
+            // Создаем словарь GUID удаляемых свойств для быстрого поиска
+            var guidsToRemove = selectedProperties.Select(p => p.Guid).ToHashSet();
+
+            // Удаляем из сохраненных свойств
+            _savedProperties.RemoveAll(p => guidsToRemove.Contains(p.Guid));
+
             ExecuteOperation(() =>
             {
                 foreach (var prop in selectedProperties)
@@ -490,16 +499,30 @@ namespace PMManager
         // 9. Методы загрузки данных
         private void InitializeProjectData()
         {
-            //_existingProperties = GetAllProperties(_app);
+            _savedProperties = GetAllProperties(_app);
             //_existingMaterials = GetAllMaterials(_app);
         }
 
+        private void OnProjectCreated() => InitializeProjectData();
+
+        private void OnProjectOpened(string filePath) => InitializeProjectData();
+
         public List<Property>? SelectProperties(List<Property> properties)
         {
+            // Создаем словарь сохраненных свойств для быстрого поиска
+            var savedGuids = _savedProperties?.ToDictionary(p => p.Guid) ?? new Dictionary<string, Property>();
+
+            // Устанавливаем флаги IsSelected для всех свойств
+            foreach (var prop in properties)
+            {
+                // Если свойство есть в сохраненных - флажок выключен
+                // Если свойства нет в сохраненных - флажок включен
+                prop.IsSelected = !savedGuids.ContainsKey(prop.Guid);
+            }
+
             ObservableCollection<Property> observableCollection = new ObservableCollection<Property>(properties);
             var dialog = new PropertySelectorDialog(observableCollection);
 
-            // Если пользователь нажал "Отмена", возвращаем null
             if (dialog.ShowDialog() == true)
             {
                 return dialog.SelectedProperties.ToList();
@@ -548,10 +571,6 @@ namespace PMManager
                 return false;
             }
         }
-
-        private void OnProjectCreated() => InitializeProjectData();
-
-        private void OnProjectOpened(string filePath) => InitializeProjectData();
 
         // 10. Статические методы получения данных
 
