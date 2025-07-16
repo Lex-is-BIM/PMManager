@@ -9,7 +9,10 @@
         Height="640" 
         Width="1300"
         WindowStartupLocation="CenterOwner"
-        Background="#FFE7EBEE">
+        Background="#FFE7EBEE"
+        WindowStyle="SingleBorderWindow"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False">
 
     <Window.Resources>
         <ResourceDictionary>
