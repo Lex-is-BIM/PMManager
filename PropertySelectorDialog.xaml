@@ -27,15 +27,17 @@
         </Grid.RowDefinitions>
 
         <DataGrid x:Name="PropertiesData"
-                  SelectionChanged="PropertiesData_SelectionChanged"
-                  Grid.Row="0"
-                  AutoGenerateColumns="False"
-                  SelectionMode="Single"
-                  CanUserAddRows="False"
-                  HeadersVisibility="Column"
-                  Margin="0,0,0,10"
-                  ItemsSource="{Binding}"
-                  GridLinesVisibility="None">
+            SelectionChanged="PropertiesData_SelectionChanged"
+            Grid.Row="0"
+            AutoGenerateColumns="False"
+            SelectionMode="Single"
+            CanUserAddRows="False"
+            HeadersVisibility="Column"
+            Margin="0,0,0,10"
+            ItemsSource="{Binding}"
+            GridLinesVisibility="None"
+            Loaded="PropertiesData_Loaded" 
+            Sorting="PropertiesData_Sorting">
 
             <!-- Ресурсы контекстного меню -->
             <DataGrid.Resources>
@@ -81,7 +83,7 @@
             <!-- Колонки -->
             <DataGrid.Columns>
                 <!-- Колонка с чекбоксом -->
-                <DataGridTemplateColumn Header="Имя" Width="240" SortMemberPath="Name">
+                <DataGridTemplateColumn Header="Имя" Width="240" SortMemberPath="Name" CanUserSort="True" SortDirection="Ascending">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center"

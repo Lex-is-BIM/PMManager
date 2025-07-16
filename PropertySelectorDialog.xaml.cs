@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -96,6 +97,25 @@ namespace PMManager
         {
             // Сохраняем изменения перед сменой выбора
             PropertiesData.CommitEdit();
+        }
+
+        private void PropertiesData_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Применяем сортировку по умолчанию при загрузке
+            var column = PropertiesData.Columns.FirstOrDefault(c => c.SortMemberPath == "Name");
+            if (column != null)
+            {
+                PropertiesData.Items.SortDescriptions.Clear();
+                PropertiesData.Items.SortDescriptions.Add(new SortDescription("Name", ListSortDirection.Ascending));
+                column.SortDirection = ListSortDirection.Ascending;
+                PropertiesData.Items.Refresh();
+            }
+        }
+
+        private void PropertiesData_Sorting(object sender, DataGridSortingEventArgs e)
+        {
+            // Оставляем стандартное поведение сортировки
+            e.Handled = false;
         }
     }
 
