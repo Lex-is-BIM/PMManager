@@ -23,6 +23,7 @@ namespace PMManager
         private readonly List<ActionEventSource> _eventSources = new();
         private readonly Renga.Application _app = new();
         private List<Property> _savedProperties = new();
+        private List<Property> _savedMaterials = new();
         private static readonly Dictionary<string, string> ObjectTypeNames = new()
         {
             ["67a0b42c-8c1e-47e8-b46e-78d8bb260de0"] = "3D-модели",
@@ -505,7 +506,7 @@ namespace PMManager
                 ShowMessage("Нет мвтериалов", "В проекте нет доступных материалов для удаления");
                 return;
             }
-            ShowMessage("Материалы", "В проекте есть доступные материалы для удаления");
+            var selectedProperties = SelectMaterials(allMaterials);
         }
 
         // 8. Вспомогательные методы
@@ -610,6 +611,31 @@ namespace PMManager
             if (dialog.ShowDialog() == true)
             {
                 return dialog.SelectedProperties.ToList();
+            }
+
+            return null;
+        }
+        public List<Material>? SelectMaterials(List<Material> materials)
+        {
+            // Создаем словарь Guid'ов сохраненных материалов для быстрого поиска
+            var savedGuids = _savedMaterials?
+                .Select(m => m.Guid)
+                .ToHashSet() ?? new HashSet<string>();
+
+            // Устанавливаем флаги IsSelected для всех материалов
+            foreach (var material in materials)
+            {
+                // Если материал есть в сохраненных - флажок выключен
+                // Если материала нет в сохраненных - флажок включен
+                material.IsSelected = !savedGuids.Contains(material.Guid);
+            }
+
+            ObservableCollection<Material> observableCollection = new(materials);
+            var dialog = new MaterialSelectorDialog(observableCollection, "Выбор материалов");
+
+            if (dialog.ShowDialog() == true)
+            {
+                return dialog.SelectedMaterials.ToList();
             }
 
             return null;
@@ -817,13 +843,33 @@ namespace PMManager
             }
         }
 
-        public class Material
+        public class Material : IEquatable<Material>, INotifyPropertyChanged
         {
+            private bool _isSelected;
+
             public required string Guid { get; init; }
             public required string Name { get; init; }
 
+            [JsonIgnore]
+            public bool IsSelected
+            {
+                get => _isSelected;
+                set
+                {
+                    if (_isSelected != value)
+                    {
+                        _isSelected = value;
+                        OnPropertyChanged();
+                    }
+                }
+            }
+
+            // Реализация IEquatable<T>
             public override bool Equals(object? obj) =>
                 obj is Material other && Guid == other.Guid;
+
+            public bool Equals(Material? other) =>
+                other is not null && Guid == other.Guid;
 
             public override int GetHashCode() => Guid.GetHashCode();
 
@@ -832,6 +878,18 @@ namespace PMManager
 
             public static bool operator !=(Material? left, Material? right) =>
                 !Equals(left, right);
+
+            // Стандартная реализация INotifyPropertyChanged
+            public event PropertyChangedEventHandler? PropertyChanged;
+
+            protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+            {
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            }
+
+            // Дополнительный метод с именем класса для ясности (опционально)
+            protected void OnMaterialChanged([CallerMemberName] string? propertyName = null)
+                => OnPropertyChanged(propertyName);
         }
     }
 }
