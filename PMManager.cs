@@ -177,7 +177,7 @@ namespace PMManager
             IUI ui = _app.UI;
 
             CreatePropertiesPanelExtension(_app, ui);
-            //CreateMaterialsPanelExtension(ui);
+            CreateMaterialsPanelExtension(ui);
         } 
 
         private IAction CreateAction(IUI ui, string displayName, Action handler)
@@ -213,6 +213,29 @@ namespace PMManager
                 exportPropertiesAction,
                 importPropertiesAction,
                 configureExclusionListAction);
+
+            // Добавляем DropDownButton на панель
+            panelExtension.AddDropDownButton(dropDownButton);
+
+            ui.AddExtensionToPrimaryPanel(panelExtension);
+        }
+
+        private void CreateMaterialsPanelExtension(IUI ui)
+        {
+            var panelExtension = ui.CreateUIPanelExtension();
+
+            IImage materialImage = LoadPluginImage(ui, "i24_PM_Materials.png");
+
+            // Создаем действия
+            IAction removeMaterialsAction = CreateAction(ui, "Удалить материалы", RemoveMaterials);
+
+            // Создаем DropDownButton 
+            var dropDownButton = CreateDropDownButton(
+                ui,
+                "Операции с материалами",
+                materialImage,
+                removeMaterialsAction
+            );
 
             // Добавляем DropDownButton на панель
             panelExtension.AddDropDownButton(dropDownButton);
@@ -471,6 +494,20 @@ namespace PMManager
             });
         }
 
+        //6. Методы для работы с материалами
+
+        private void RemoveMaterials()
+        {
+            // Проверяем наличие свойств в проекте
+            var allMaterials = GetAllMaterials(_app);
+            if (allMaterials.Count == 0)
+            {
+                ShowMessage("Нет мвтериалов", "В проекте нет доступных материалов для удаления");
+                return;
+            }
+            ShowMessage("Материалы", "В проекте есть доступные материалы для удаления");
+        }
+
         // 8. Вспомогательные методы
         public static bool ConfirmAction(string title, string message)
         {
@@ -669,7 +706,7 @@ namespace PMManager
                 });
             }
             return propertiesList;
-        }
+        } 
 
         private List<Property> LoadPropertiesFromFile()
         {
@@ -698,6 +735,26 @@ namespace PMManager
             {
                 throw new ApplicationException($"Ошибка чтения файла {openFileDialog.FileName}: {ex.Message}", ex);
             }
+        }
+
+        private List<Material> GetAllMaterials(IApplication app)
+        {
+            var materials = app.Project.Materials;
+            var result = new List<Material>(materials.Count); // Задаем начальную емкость
+
+            var objectTypeGuids = ObjectTypeNames.Keys.ToArray();
+
+            for (int i = 0; i < materials.Count; i++)
+            {
+                var material = materials.GetByIndex(i);
+                result.Add(new Material
+                {
+                    Guid = material.UniqueIdS,
+                    Name = material.Name
+                });
+            }
+
+            return result;
         }
 
         // Классы
@@ -760,5 +817,21 @@ namespace PMManager
             }
         }
 
+        public class Material
+        {
+            public required string Guid { get; init; }
+            public required string Name { get; init; }
+
+            public override bool Equals(object? obj) =>
+                obj is Material other && Guid == other.Guid;
+
+            public override int GetHashCode() => Guid.GetHashCode();
+
+            public static bool operator ==(Material? left, Material? right) =>
+                Equals(left, right);
+
+            public static bool operator !=(Material? left, Material? right) =>
+                !Equals(left, right);
+        }
     }
 }
