@@ -23,7 +23,7 @@ namespace PMManager
         private readonly List<ActionEventSource> _eventSources = new();
         private readonly Renga.Application _app = new();
         private List<Property> _savedProperties = new();
-        private List<Property> _savedMaterials = new();
+        private List<Material> _savedMaterials = new();
         private static readonly Dictionary<string, string> ObjectTypeNames = new()
         {
             ["67a0b42c-8c1e-47e8-b46e-78d8bb260de0"] = "3D-модели",
@@ -503,10 +503,41 @@ namespace PMManager
             var allMaterials = GetAllMaterials(_app);
             if (allMaterials.Count == 0)
             {
-                ShowMessage("Нет мвтериалов", "В проекте нет доступных материалов для удаления");
+                ShowMessage("Нет материалов", "В проекте нет доступных материалов для удаления");
                 return;
             }
-            var selectedProperties = SelectMaterials(allMaterials);
+            var selectedMaterials = SelectMaterials(allMaterials, "Выбор материалов");
+
+            // Проверяем на отмену
+            if (selectedMaterials == null)
+            {
+                return; // Просто выходим без сообщения
+            }
+
+            if (selectedMaterials.Count == 0)
+            {
+                ShowMessage("Отмена удаления", "Нет выбранных материалов для удаления");
+                return;
+            }
+
+            // Добавляем подтверждение удаления
+            string message = $"Будет удалено {selectedMaterials.Count} {GetNounForm(selectedMaterials.Count, "материал", "материала", "материалов")}";
+            if (!ConfirmAction("Подтверждение удаления", message))
+            {
+                return; // Пользователь отменил удаление
+            }
+
+            // Создаем словарь GUID удаляемых материалов для быстрого поиска
+            var guidsToRemove = selectedMaterials.Select(p => p.Guid).ToHashSet();
+
+            ExecuteOperation(() =>
+            {
+                foreach (var material in selectedMaterials)
+                {
+                    _app.Project.Materials.RemoveByUniqueIdS(material.Guid);
+                }
+            });
+
         }
 
         // 8. Вспомогательные методы
@@ -585,7 +616,7 @@ namespace PMManager
         private void InitializeProjectData()
         {
             _savedProperties = GetAllProperties(_app);
-            //_existingMaterials = GetAllMaterials(_app);
+            _savedMaterials = GetAllMaterials(_app);
         }
 
         private void OnProjectCreated() => InitializeProjectData();
@@ -615,7 +646,7 @@ namespace PMManager
 
             return null;
         }
-        public List<Material>? SelectMaterials(List<Material> materials)
+        public List<Material>? SelectMaterials(List<Material> materials,string title)
         {
             // Создаем словарь Guid'ов сохраненных материалов для быстрого поиска
             var savedGuids = _savedMaterials?
@@ -631,7 +662,7 @@ namespace PMManager
             }
 
             ObservableCollection<Material> observableCollection = new(materials);
-            var dialog = new MaterialSelectorDialog(observableCollection, "Выбор материалов");
+            var dialog = new MaterialSelectorDialog(observableCollection, title);
 
             if (dialog.ShowDialog() == true)
             {
@@ -775,7 +806,7 @@ namespace PMManager
                 var material = materials.GetByIndex(i);
                 result.Add(new Material
                 {
-                    Guid = material.UniqueIdS,
+                    Guid = material.UniqueIdS.ToLower(),
                     Name = material.Name
                 });
             }
