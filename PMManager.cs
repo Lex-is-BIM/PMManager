@@ -12,6 +12,7 @@ using System.Runtime.CompilerServices;
 using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
 using System.Reflection;
+using System.Linq;
 
 namespace PMManager
 {
@@ -203,7 +204,7 @@ namespace PMManager
             IAction removePropertiesAction = CreateAction(ui, "Удалить свойства", RemoveProperties);
             IAction exportPropertiesAction = CreateAction(ui, "Экспортировать свойства", ExportProperties);
             IAction importPropertiesAction = CreateAction(ui, "Импортировать свойства", ImportProperties);
-            IAction configureExclusionListAction = CreateAction(ui, "Настройка списка исключений", ConfigureExclusionList);
+            IAction configureExclusionListAction = CreateAction(ui, "Настройка списка исключений", ConfigurePropertysExclusionList);
 
             // Создаем DropDownButton 
             var dropDownButton = CreateDropDownButton(
@@ -245,54 +246,15 @@ namespace PMManager
         }
 
         // 5. Методы для работы со свойствами
-        private void RemoveProperties()
+        public void RemoveProperties()
         {
-            // Сначала проверяем наличие свойств в проекте
-            var allProperties = GetAllProperties(_app);
-            if (allProperties.Count == 0)
-            {
-                ShowMessage("Нет свойств", "В проекте нет доступных свойств для удаления");
-                return;
-            }
-
-            // Получаем список свойств с возможностью выбора
-            var selectedProperties = SelectProperties(allProperties);
-
-            // Проверяем на отмену
-            if (selectedProperties == null)
-            {
-                return; // Просто выходим без сообщения
-            }
-
-            if (selectedProperties.Count == 0)
-            {
-                ShowMessage("Отмена удаления", "Нет выбранных свойств для удаления");
-                return;
-            }
-
-            // Добавляем подтверждение удаления
-            string message = $"Будет удалено {selectedProperties.Count} {GetNounForm(selectedProperties.Count, "свойство", "свойства", "свойств")}";
-            if (!ConfirmAction("Подтверждение удаления", message))
-            {
-                return; // Пользователь отменил удаление
-            }
-
-            // Создаем словарь GUID удаляемых свойств для быстрого поиска
-            var guidsToRemove = selectedProperties.Select(p => p.Guid).ToHashSet();
-
-            // Удаляем из сохраненных свойств
-            _savedProperties.RemoveAll(p => guidsToRemove.Contains(p.Guid));
-
-            ExecuteOperation(() =>
-            {
-                foreach (var prop in selectedProperties)
-                {
-                    _app.Project.PropertyManager.UnregisterPropertyS(prop.Guid);
-                }
-            });
-
-            //ShowMessage("Удаление завершено",
-            //    $"Удалено {selectedProperties.Count} {GetNounForm(selectedProperties.Count, "свойство", "свойства", "свойств")}");
+            RemoveItems(
+                getAllItems: () => GetAllProperties(_app),
+                selectItems: props => SelectProperties(props, "Выбор удаляемых свойств"), // Добавлен заголовок
+                nounForms: new[] { "свойство", "свойства", "свойств" },
+                removeItems: props => props.ForEach(p => _app.Project.PropertyManager.UnregisterPropertyS(p.Guid)),
+                cleanupSavedItems: guids => _savedProperties.RemoveAll(p => guids.Contains(p.Guid))
+            );
         }
 
         private void ExportProperties()
@@ -308,7 +270,7 @@ namespace PMManager
                 }
 
                 // Получаем список свойств с возможностью выбора
-                var selectedProperties = SelectProperties(allProperties);
+                var selectedProperties = SelectProperties(allProperties, "Выбор экспортируемых свойств");
 
                 // Проверяем на отмену
                 if (selectedProperties == null)
@@ -373,7 +335,7 @@ namespace PMManager
                 }
 
                 // Показываем список новых свойств пользователю для выбора
-                List<Property>? selectedProperties = SelectProperties(newProperties);
+                List<Property>? selectedProperties = SelectProperties(newProperties, "Выбор импортируемых свойств");
 
                 // Добавляем проверку на отмену
                 if (selectedProperties == null)
@@ -415,7 +377,7 @@ namespace PMManager
             }
         }
 
-        private void ConfigureExclusionList()
+        private void ConfigurePropertysExclusionList()
         {
             // Получаем все свойства проекта
             var allProperties = GetAllProperties(_app);
@@ -497,50 +459,52 @@ namespace PMManager
 
         //6. Методы для работы с материалами
 
-        private void RemoveMaterials()
+        public void RemoveMaterials()
         {
-            // Проверяем наличие свойств в проекте
-            var allMaterials = GetAllMaterials(_app);
-            if (allMaterials.Count == 0)
-            {
-                ShowMessage("Нет материалов", "В проекте нет доступных материалов для удаления");
-                return;
-            }
-            var selectedMaterials = SelectMaterials(allMaterials, "Выбор материалов");
-
-            // Проверяем на отмену
-            if (selectedMaterials == null)
-            {
-                return; // Просто выходим без сообщения
-            }
-
-            if (selectedMaterials.Count == 0)
-            {
-                ShowMessage("Отмена удаления", "Нет выбранных материалов для удаления");
-                return;
-            }
-
-            // Добавляем подтверждение удаления
-            string message = $"Будет удалено {selectedMaterials.Count} {GetNounForm(selectedMaterials.Count, "материал", "материала", "материалов")}";
-            if (!ConfirmAction("Подтверждение удаления", message))
-            {
-                return; // Пользователь отменил удаление
-            }
-
-            // Создаем словарь GUID удаляемых материалов для быстрого поиска
-            var guidsToRemove = selectedMaterials.Select(p => p.Guid).ToHashSet();
-
-            ExecuteOperation(() =>
-            {
-                foreach (var material in selectedMaterials)
-                {
-                    _app.Project.Materials.RemoveByUniqueIdS(material.Guid);
-                }
-            });
-
+            RemoveItems(
+                getAllItems: () => GetAllMaterials(_app),
+                selectItems: mats => SelectMaterials(mats, "Выбор удаляемых материалов"),
+                nounForms: new[] { "материал", "материала", "материалов" },
+                removeItems: mats => mats.ForEach(m => _app.Project.Materials.RemoveByUniqueIdS(m.Guid))
+            );
         }
 
+        //private void ConfigureMaterialsExclusionList()
+        //{
+        //    // Получаем все свойства проекта
+        //    var allNaterials = GetAllProperties(_app);
+
+        //    // Если свойств нет, показываем сообщение
+        //    if (allProperties.Count == 0)
+        //    {
+        //        ShowMessage("Нет свойств", "В проекте нет доступных свойств для настройки");
+        //        return;
+        //    }
+
+        //    // Устанавливаем начальное состояние флажков
+        //    foreach (var prop in allProperties)
+        //    {
+        //        prop.IsSelected = _savedProperties.Any(sp => sp.Guid == prop.Guid);
+        //    }
+
+        //    // Открываем диалоговое окно настройки
+        //    var dialog = new PropertySelectorDialog(new ObservableCollection<Property>(allProperties), "Настройка списка исключений");
+
+        //    // Показываем окно
+        //    if (dialog.ShowDialog() == true)
+        //    {
+        //        // Обновляем список сохраненных свойств
+        //        _savedProperties.Clear();
+        //        _savedProperties.AddRange(dialog.SelectedProperties);
+        //    }
+
+        //    // Показываем подтверждение
+        //    ShowMessage("Настройки сохранены",
+        //        $"Настроено {_savedProperties.Count} {GetNounForm(_savedProperties.Count, "свойство", "свойства", "свойств")}");
+        //}
+
         // 8. Вспомогательные методы
+
         public static bool ConfirmAction(string title, string message)
         {
             var dialog = new CustomMessageBoxDouble(title, message);
@@ -612,6 +576,45 @@ namespace PMManager
             return button;
         }
 
+        //7. Общие методы
+        private void RemoveItems<T>(
+            Func<List<T>> getAllItems,            // Получение всех элементов (свойств/материалов)
+            Func<List<T>, List<T>> selectItems,   // Выбор элементов (с обработкой отмены)
+            string[] nounForms,                   // Формы слова: ["свойство", "свойства", "свойств"]
+            Action<List<T>> removeItems,          // Метод удаления (например, PropertyManager.UnregisterPropertyS)
+            Action<List<string>> cleanupSavedItems = null // Очистка дополнительных списков (опционально)
+        )
+        {
+            var allItems = getAllItems();
+            if (allItems.Count == 0)
+            {
+                ShowMessage($"Нет {nounForms[2]}", $"В проекте нет доступных {nounForms[2]} для удаления");
+                return;
+            }
+
+            var selectedItems = selectItems(allItems);
+            if (selectedItems == null) return; // Пользователь отменил выбор
+
+            if (selectedItems.Count == 0)
+            {
+                ShowMessage("Отмена удаления", $"Нет выбранных {nounForms[2]} для удаления");
+                return;
+            }
+
+            string message = $"Будет удалено {selectedItems.Count} " +
+                             GetNounForm(selectedItems.Count, nounForms[0], nounForms[1], nounForms[2]);
+
+            if (!ConfirmAction("Подтверждение удаления", message))
+                return;
+
+            var guidsToRemove = selectedItems.Select(item =>
+                item.GetType().GetProperty("Guid").GetValue(item).ToString()).ToList();
+
+            cleanupSavedItems?.Invoke(guidsToRemove);
+
+            ExecuteOperation(() => removeItems(selectedItems));
+        }
+
         // 9. Методы загрузки данных
         private void InitializeProjectData()
         {
@@ -623,7 +626,7 @@ namespace PMManager
 
         private void OnProjectOpened(string filePath) => InitializeProjectData();
 
-        public List<Property>? SelectProperties(List<Property> properties)
+        public List<Property>? SelectProperties(List<Property> properties, string title)
         {
             // Создаем словарь сохраненных свойств для быстрого поиска
             var savedGuids = _savedProperties?.ToDictionary(p => p.Guid) ?? new Dictionary<string, Property>();
@@ -637,7 +640,7 @@ namespace PMManager
             }
 
             ObservableCollection<Property> observableCollection = new ObservableCollection<Property>(properties);
-            var dialog = new PropertySelectorDialog(observableCollection, "Выбор свойств");
+            var dialog = new PropertySelectorDialog(observableCollection, title);
 
             if (dialog.ShowDialog() == true)
             {
