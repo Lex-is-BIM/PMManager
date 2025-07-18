@@ -204,7 +204,7 @@ namespace PMManager
             IAction removePropertiesAction = CreateAction(ui, "Удалить свойства", RemoveProperties);
             IAction exportPropertiesAction = CreateAction(ui, "Экспортировать свойства", ExportProperties);
             IAction importPropertiesAction = CreateAction(ui, "Импортировать свойства", ImportProperties);
-            IAction configureExclusionListAction = CreateAction(ui, "Настройка списка исключений", ConfigurePropertysExclusionList);
+            IAction configurePropertiesExclusionAction= CreateAction(ui, "Настройка списка исключений", ConfigurePropertiesExclusion);
 
             // Создаем DropDownButton 
             var dropDownButton = CreateDropDownButton(
@@ -214,7 +214,7 @@ namespace PMManager
                 removePropertiesAction,
                 exportPropertiesAction,
                 importPropertiesAction,
-                configureExclusionListAction);
+                configurePropertiesExclusionAction);
 
             // Добавляем DropDownButton на панель
             panelExtension.AddDropDownButton(dropDownButton);
@@ -230,13 +230,15 @@ namespace PMManager
 
             // Создаем действия
             IAction removeMaterialsAction = CreateAction(ui, "Удалить материалы", RemoveMaterials);
+            IAction configureMaterialsExclusionAction = CreateAction(ui, "Настройка списка исключений", ConfigureMaterialsExclusion);
 
             // Создаем DropDownButton 
             var dropDownButton = CreateDropDownButton(
                 ui,
                 "Операции с материалами",
                 materialImage,
-                removeMaterialsAction
+                removeMaterialsAction,
+                configureMaterialsExclusionAction
             );
 
             // Добавляем DropDownButton на панель
@@ -377,38 +379,18 @@ namespace PMManager
             }
         }
 
-        private void ConfigurePropertysExclusionList()
+        private void ConfigurePropertiesExclusion()
         {
-            // Получаем все свойства проекта
-            var allProperties = GetAllProperties(_app);
-
-            // Если свойств нет, показываем сообщение
-            if (allProperties.Count == 0)
-            {
-                ShowMessage("Нет свойств", "В проекте нет доступных свойств для настройки");
-                return;
-            }
-
-            // Устанавливаем начальное состояние флажков
-            foreach (var prop in allProperties)
-            {
-                prop.IsSelected = _savedProperties.Any(sp => sp.Guid == prop.Guid);
-            }
-
-            // Открываем диалоговое окно настройки
-            var dialog = new PropertySelectorDialog(new ObservableCollection<Property>(allProperties), "Настройка списка исключений");
-
-            // Показываем окно
-            if (dialog.ShowDialog() == true)
-            {
-                // Обновляем список сохраненных свойств
-                _savedProperties.Clear();
-                _savedProperties.AddRange(dialog.SelectedProperties);
-            }
-
-            // Показываем подтверждение
-            ShowMessage("Настройки сохранены",
-                $"Настроено {_savedProperties.Count} {GetNounForm(_savedProperties.Count, "свойство", "свойства", "свойств")}");
+            ConfigureExclusionList<Property>(
+                getAllItems: () => GetAllProperties(_app),
+                isItemSelected: prop => _savedProperties.Any(sp => sp.Guid == prop.Guid),
+                setSelectedState: (prop, isSelected) => prop.IsSelected = isSelected,
+                createDialog: (items, title) => new PropertySelectorDialog(items, title),
+                getSelectedItems: dialog => ((PropertySelectorDialog)dialog).SelectedProperties.ToList(),
+                dialogTitle: "Настройка списка исключений свойств",
+                nounForms: new[] { "свойство", "свойства", "свойств" },
+                savedItems: _savedProperties
+            );
         }
 
         private void CreateProperties(IApplication app, List<Property> properties)
@@ -469,39 +451,19 @@ namespace PMManager
             );
         }
 
-        //private void ConfigureMaterialsExclusionList()
-        //{
-        //    // Получаем все свойства проекта
-        //    var allNaterials = GetAllProperties(_app);
-
-        //    // Если свойств нет, показываем сообщение
-        //    if (allProperties.Count == 0)
-        //    {
-        //        ShowMessage("Нет свойств", "В проекте нет доступных свойств для настройки");
-        //        return;
-        //    }
-
-        //    // Устанавливаем начальное состояние флажков
-        //    foreach (var prop in allProperties)
-        //    {
-        //        prop.IsSelected = _savedProperties.Any(sp => sp.Guid == prop.Guid);
-        //    }
-
-        //    // Открываем диалоговое окно настройки
-        //    var dialog = new PropertySelectorDialog(new ObservableCollection<Property>(allProperties), "Настройка списка исключений");
-
-        //    // Показываем окно
-        //    if (dialog.ShowDialog() == true)
-        //    {
-        //        // Обновляем список сохраненных свойств
-        //        _savedProperties.Clear();
-        //        _savedProperties.AddRange(dialog.SelectedProperties);
-        //    }
-
-        //    // Показываем подтверждение
-        //    ShowMessage("Настройки сохранены",
-        //        $"Настроено {_savedProperties.Count} {GetNounForm(_savedProperties.Count, "свойство", "свойства", "свойств")}");
-        //}
+        private void ConfigureMaterialsExclusion()
+        {
+            ConfigureExclusionList<Material>(
+                getAllItems: () => GetAllMaterials(_app),
+                isItemSelected: mat => _savedMaterials.Any(sm => sm.Guid == mat.Guid),
+                setSelectedState: (mat, isSelected) => mat.IsSelected = isSelected,
+                createDialog: (items, title) => new MaterialSelectorDialog(items, title),
+                getSelectedItems: dialog => ((MaterialSelectorDialog)dialog).SelectedMaterials.ToList(),
+                dialogTitle: "Настройка списка исключений материалов",
+                nounForms: new[] { "материал", "материала", "материалов" },
+                savedItems: _savedMaterials
+            );
+        }
 
         // 8. Вспомогательные методы
 
@@ -613,6 +575,42 @@ namespace PMManager
             cleanupSavedItems?.Invoke(guidsToRemove);
 
             ExecuteOperation(() => removeItems(selectedItems));
+        }
+
+        private void ConfigureExclusionList<T>(
+            Func<List<T>> getAllItems,
+            Func<T, bool> isItemSelected,
+            Action<T, bool> setSelectedState,
+            Func<ObservableCollection<T>, string, Window> createDialog,
+            Func<Window, List<T>> getSelectedItems,
+            string dialogTitle,
+            string[] nounForms,
+            List<T> savedItems) where T : class, IEquatable<T>, INotifyPropertyChanged
+        {
+            var allItems = getAllItems();
+            if (allItems.Count == 0)
+            {
+                ShowMessage($"Нет {nounForms[2]}", $"В проекте нет доступных {nounForms[2]} для настройки");
+                return;
+            }
+
+            foreach (var item in allItems)
+            {
+                setSelectedState(item, isItemSelected(item));
+            }
+
+            var dialog = createDialog(new ObservableCollection<T>(allItems), dialogTitle);
+
+            if (dialog.ShowDialog() == true)
+            {
+                var selectedItems = getSelectedItems(dialog);
+
+                savedItems.Clear();
+                savedItems.AddRange(selectedItems);
+
+                ShowMessage("Настройки сохранены",
+                    $"Настроено {savedItems.Count} {GetNounForm(savedItems.Count, nounForms[0], nounForms[1], nounForms[2])}");
+            }
         }
 
         // 9. Методы загрузки данных
