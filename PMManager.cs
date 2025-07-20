@@ -25,6 +25,7 @@ namespace PMManager
         private readonly Renga.Application _app = new();
         private List<Property> _savedProperties = new();
         private List<Material> _savedMaterials = new();
+        private List<LayeredMaterial> _savedlayerdMaterials = new();
         private static readonly Dictionary<string, string> ObjectTypeNames = new()
         {
             ["67a0b42c-8c1e-47e8-b46e-78d8bb260de0"] = "3D-модели",
@@ -647,6 +648,7 @@ namespace PMManager
 
             return null;
         }
+
         public List<Material>? SelectMaterials(List<Material> materials,string title)
         {
             // Создаем словарь Guid'ов сохраненных материалов для быстрого поиска
@@ -815,6 +817,35 @@ namespace PMManager
             return result;
         }
 
+        private List<LayeredMaterial> GetAllLayeredMaterials(IApplication app)
+        {
+            var project = app.Project;
+            var layeredMaterials = project.LayeredMaterials;
+            var layeredMaterialManager = project.LayeredMaterialManager;
+
+            var layeredMaterialIds = layeredMaterials.GetIds();
+            var result = new List<LayeredMaterial>(layeredMaterialIds.Length);
+
+            foreach (int layeredMaterialId in layeredMaterialIds)
+            {
+                // Получаем интерфейс ILayeredMaterial для доступа к имени и группе
+                ILayeredMaterial layeredMaterial = layeredMaterialManager.GetLayeredMaterial(layeredMaterialId);
+                LayeredMaterialGroup group = layeredMaterial.GetIdGroupPair().Group;
+
+                // Получаем интерфейс IEntity для доступа к UniqueIdS
+                IEntity layeredMaterialEntity = layeredMaterials.GetById(layeredMaterialId);
+
+                result.Add(new LayeredMaterial
+                {
+                    Guid = layeredMaterialEntity.UniqueIdS.ToLower(),
+                    Name = layeredMaterial.Name,
+                    LayeredMaterialGroup = group.ToString() // Явное преобразование группы в строку
+                });
+            }
+
+            return result;
+        }
+
         // Классы
         public sealed class Property : IEquatable<Property>, INotifyPropertyChanged
         {
@@ -921,6 +952,56 @@ namespace PMManager
 
             // Дополнительный метод с именем класса для ясности (опционально)
             protected void OnMaterialChanged([CallerMemberName] string? propertyName = null)
+                => OnPropertyChanged(propertyName);
+        }
+
+        public class LayeredMaterial : IEquatable<LayeredMaterial>, INotifyPropertyChanged
+        {
+            private bool _isSelected;
+
+            public required string Guid { get; init; }
+            public required string Name { get; init; }
+            public required string LayeredMaterialGroup { get; init; }
+
+            [JsonIgnore]
+            public bool IsSelected
+            {
+                get => _isSelected;
+                set
+                {
+                    if (_isSelected != value)
+                    {
+                        _isSelected = value;
+                        OnPropertyChanged();
+                    }
+                }
+            }
+
+            // Реализация IEquatable<T>
+            public override bool Equals(object? obj) =>
+                obj is LayeredMaterial other && Guid == other.Guid;
+
+            public bool Equals(LayeredMaterial? other) =>
+                other is not null && Guid == other.Guid;
+
+            public override int GetHashCode() => Guid.GetHashCode();
+
+            public static bool operator ==(LayeredMaterial? left, LayeredMaterial? right) =>
+                Equals(left, right);
+
+            public static bool operator !=(LayeredMaterial? left, LayeredMaterial? right) =>
+                !Equals(left, right);
+
+            // Стандартная реализация INotifyPropertyChanged
+            public event PropertyChangedEventHandler? PropertyChanged;
+
+            protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+            {
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            }
+
+            // Дополнительный метод с именем класса для ясности (опционально)
+            protected void OnLayeredMaterialChanged([CallerMemberName] string? propertyName = null)
                 => OnPropertyChanged(propertyName);
         }
     }
