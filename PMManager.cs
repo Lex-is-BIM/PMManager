@@ -1,4 +1,3 @@
-
 using Microsoft.Win32;
 using Renga;
 using System.IO;
@@ -142,7 +141,7 @@ namespace PMManager
                     return Assembly.LoadFrom(missingPath);
                 else
                     return null;
-            };            
+            };
             InitializeEvents();
             InitializeUI();
             return true;
@@ -181,7 +180,7 @@ namespace PMManager
 
             CreatePropertiesPanelExtension(_app, ui);
             CreateMaterialsPanelExtension(ui);
-        } 
+        }
 
         private IAction CreateAction(IUI ui, string displayName, Action handler)
         {
@@ -205,7 +204,7 @@ namespace PMManager
             IAction removePropertiesAction = CreateAction(ui, "Удалить свойства", RemoveProperties);
             IAction exportPropertiesAction = CreateAction(ui, "Экспортировать свойства", ExportProperties);
             IAction importPropertiesAction = CreateAction(ui, "Импортировать свойства", ImportProperties);
-            IAction configurePropertiesExclusionAction= CreateAction(ui, "Настройка списка исключений", ConfigurePropertiesExclusion);
+            IAction configurePropertiesExclusionAction = CreateAction(ui, "Настройка списка исключений", ConfigurePropertiesExclusion);
 
             // Создаем DropDownButton 
             var dropDownButton = CreateDropDownButton(
@@ -251,13 +250,33 @@ namespace PMManager
         // 5. Методы для работы со свойствами
         public void RemoveProperties()
         {
-            RemoveItems(
-                getAllItems: () => GetAllProperties(_app),
-                selectItems: props => SelectProperties(props, "Выбор удаляемых свойств"), // Добавлен заголовок
-                nounForms: new[] { "свойство", "свойства", "свойств" },
-                removeItems: props => props.ForEach(p => _app.Project.PropertyManager.UnregisterPropertyS(p.Guid)),
-                cleanupSavedItems: guids => _savedProperties.RemoveAll(p => guids.Contains(p.Guid))
-            );
+            var allProperties = GetAllProperties(_app);
+            if (allProperties.Count == 0)
+            {
+                ShowMessage("Нет свойств", "В проекте нет доступных свойств для удаления");
+                return;
+            }
+
+            var selectedProperties = SelectProperties(allProperties, "Выбор удаляемых свойств");
+            if (selectedProperties == null) return; // Пользователь отменил выбор
+
+            if (selectedProperties.Count == 0)
+            {
+                ShowMessage("Отмена удаления", "Нет выбранных свойств для удаления");
+                return;
+            }
+
+            string message = $"Будет удалено {selectedProperties.Count} " +
+                            GetNounForm(selectedProperties.Count, "свойство", "свойства", "свойств");
+
+            if (!ConfirmAction("Подтверждение удаления", message))
+                return;
+
+            var guidsToRemove = selectedProperties.Select(p => p.Guid).ToList();
+            _savedProperties.RemoveAll(p => guidsToRemove.Contains(p.Guid));
+
+            ExecuteOperation(() =>
+                selectedProperties.ForEach(p => _app.Project.PropertyManager.UnregisterPropertyS(p.Guid)));
         }
 
         private void ExportProperties()
@@ -382,16 +401,31 @@ namespace PMManager
 
         private void ConfigurePropertiesExclusion()
         {
-            ConfigureExclusionList<Property>(
-                getAllItems: () => GetAllProperties(_app),
-                isItemSelected: prop => _savedProperties.Any(sp => sp.Guid == prop.Guid),
-                setSelectedState: (prop, isSelected) => prop.IsSelected = isSelected,
-                createDialog: (items, title) => new PropertySelectorDialog(items, title),
-                getSelectedItems: dialog => ((PropertySelectorDialog)dialog).SelectedProperties.ToList(),
-                dialogTitle: "Настройка списка исключений свойств",
-                nounForms: new[] { "свойство", "свойства", "свойств" },
-                savedItems: _savedProperties
-            );
+            var allProperties = GetAllProperties(_app);
+            if (allProperties.Count == 0)
+            {
+                ShowMessage("Нет свойств", "В проекте нет доступных свойств для настройки");
+                return;
+            }
+
+            foreach (var prop in allProperties)
+            {
+                prop.IsSelected = _savedProperties.Any(sp => sp.Guid == prop.Guid);
+            }
+
+            var dialog = new PropertySelectorDialog(new ObservableCollection<Property>(allProperties),
+                "Настройка списка исключений свойств");
+
+            if (dialog.ShowDialog() == true)
+            {
+                var selectedProperties = dialog.SelectedProperties.ToList();
+
+                _savedProperties.Clear();
+                _savedProperties.AddRange(selectedProperties);
+
+                ShowMessage("Настройки сохранены",
+                    $"Настроено {_savedProperties.Count} {GetNounForm(_savedProperties.Count, "свойство", "свойства", "свойств")}");
+            }
         }
 
         private void CreateProperties(IApplication app, List<Property> properties)
@@ -441,33 +475,64 @@ namespace PMManager
         }
 
         //6. Методы для работы с материалами
-
         public void RemoveMaterials()
         {
-            RemoveItems(
-                getAllItems: () => GetAllMaterials(_app),
-                selectItems: mats => SelectMaterials(mats, "Выбор удаляемых материалов"),
-                nounForms: new[] { "материал", "материала", "материалов" },
-                removeItems: mats => mats.ForEach(m => _app.Project.Materials.RemoveByUniqueIdS(m.Guid))
-            );
+            var allMaterials = GetAllMaterials(_app);
+            if (allMaterials.Count == 0)
+            {
+                ShowMessage("Нет материалов", "В проекте нет доступных материалов для удаления");
+                return;
+            }
+
+            var selectedMaterials = SelectMaterials(allMaterials, "Выбор удаляемых материалов");
+            if (selectedMaterials == null) return; // Пользователь отменил выбор
+
+            if (selectedMaterials.Count == 0)
+            {
+                ShowMessage("Отмена удаления", "Нет выбранных материалов для удаления");
+                return;
+            }
+
+            string message = $"Будет удалено {selectedMaterials.Count} " +
+                            GetNounForm(selectedMaterials.Count, "материал", "материала", "материалов");
+
+            if (!ConfirmAction("Подтверждение удаления", message))
+                return;
+
+            ExecuteOperation(() =>
+                selectedMaterials.ForEach(m => _app.Project.Materials.RemoveByUniqueIdS(m.Guid)));
         }
 
         private void ConfigureMaterialsExclusion()
         {
-            ConfigureExclusionList<Material>(
-                getAllItems: () => GetAllMaterials(_app),
-                isItemSelected: mat => _savedMaterials.Any(sm => sm.Guid == mat.Guid),
-                setSelectedState: (mat, isSelected) => mat.IsSelected = isSelected,
-                createDialog: (items, title) => new MaterialSelectorDialog(items, title),
-                getSelectedItems: dialog => ((MaterialSelectorDialog)dialog).SelectedMaterials.ToList(),
-                dialogTitle: "Настройка списка исключений материалов",
-                nounForms: new[] { "материал", "материала", "материалов" },
-                savedItems: _savedMaterials
-            );
+            var allMaterials = GetAllMaterials(_app);
+            if (allMaterials.Count == 0)
+            {
+                ShowMessage("Нет материалов", "В проекте нет доступных материалов для настройки");
+                return;
+            }
+
+            foreach (var mat in allMaterials)
+            {
+                mat.IsSelected = _savedMaterials.Any(sm => sm.Guid == mat.Guid);
+            }
+
+            var dialog = new MaterialSelectorDialog(new ObservableCollection<Material>(allMaterials),
+                "Настройка списка исключений материалов");
+
+            if (dialog.ShowDialog() == true)
+            {
+                var selectedMaterials = dialog.SelectedMaterials.ToList();
+
+                _savedMaterials.Clear();
+                _savedMaterials.AddRange(selectedMaterials);
+
+                ShowMessage("Настройки сохранены",
+                    $"Настроено {_savedMaterials.Count} {GetNounForm(_savedMaterials.Count, "материал", "материала", "материалов")}");
+            }
         }
 
         // 8. Вспомогательные методы
-
         public static bool ConfirmAction(string title, string message)
         {
             var dialog = new CustomMessageBoxDouble(title, message);
@@ -539,81 +604,6 @@ namespace PMManager
             return button;
         }
 
-        //7. Общие методы
-        private void RemoveItems<T>(
-            Func<List<T>> getAllItems,            // Получение всех элементов (свойств/материалов)
-            Func<List<T>, List<T>> selectItems,   // Выбор элементов (с обработкой отмены)
-            string[] nounForms,                   // Формы слова: ["свойство", "свойства", "свойств"]
-            Action<List<T>> removeItems,          // Метод удаления (например, PropertyManager.UnregisterPropertyS)
-            Action<List<string>> cleanupSavedItems = null // Очистка дополнительных списков (опционально)
-        )
-        {
-            var allItems = getAllItems();
-            if (allItems.Count == 0)
-            {
-                ShowMessage($"Нет {nounForms[2]}", $"В проекте нет доступных {nounForms[2]} для удаления");
-                return;
-            }
-
-            var selectedItems = selectItems(allItems);
-            if (selectedItems == null) return; // Пользователь отменил выбор
-
-            if (selectedItems.Count == 0)
-            {
-                ShowMessage("Отмена удаления", $"Нет выбранных {nounForms[2]} для удаления");
-                return;
-            }
-
-            string message = $"Будет удалено {selectedItems.Count} " +
-                             GetNounForm(selectedItems.Count, nounForms[0], nounForms[1], nounForms[2]);
-
-            if (!ConfirmAction("Подтверждение удаления", message))
-                return;
-
-            var guidsToRemove = selectedItems.Select(item =>
-                item.GetType().GetProperty("Guid").GetValue(item).ToString()).ToList();
-
-            cleanupSavedItems?.Invoke(guidsToRemove);
-
-            ExecuteOperation(() => removeItems(selectedItems));
-        }
-
-        private void ConfigureExclusionList<T>(
-            Func<List<T>> getAllItems,
-            Func<T, bool> isItemSelected,
-            Action<T, bool> setSelectedState,
-            Func<ObservableCollection<T>, string, Window> createDialog,
-            Func<Window, List<T>> getSelectedItems,
-            string dialogTitle,
-            string[] nounForms,
-            List<T> savedItems) where T : class, IEquatable<T>, INotifyPropertyChanged
-        {
-            var allItems = getAllItems();
-            if (allItems.Count == 0)
-            {
-                ShowMessage($"Нет {nounForms[2]}", $"В проекте нет доступных {nounForms[2]} для настройки");
-                return;
-            }
-
-            foreach (var item in allItems)
-            {
-                setSelectedState(item, isItemSelected(item));
-            }
-
-            var dialog = createDialog(new ObservableCollection<T>(allItems), dialogTitle);
-
-            if (dialog.ShowDialog() == true)
-            {
-                var selectedItems = getSelectedItems(dialog);
-
-                savedItems.Clear();
-                savedItems.AddRange(selectedItems);
-
-                ShowMessage("Настройки сохранены",
-                    $"Настроено {savedItems.Count} {GetNounForm(savedItems.Count, nounForms[0], nounForms[1], nounForms[2])}");
-            }
-        }
-
         // 9. Методы загрузки данных
         private void InitializeProjectData()
         {
@@ -649,7 +639,7 @@ namespace PMManager
             return null;
         }
 
-        public List<Material>? SelectMaterials(List<Material> materials,string title)
+        public List<Material>? SelectMaterials(List<Material> materials, string title)
         {
             // Создаем словарь Guid'ов сохраненных материалов для быстрого поиска
             var savedGuids = _savedMaterials?
@@ -717,7 +707,6 @@ namespace PMManager
         }
 
         // 10. Статические методы получения данных
-
         private List<Property> GetAllProperties(IApplication app)
         {
             var propertyManager = app.Project.PropertyManager;
@@ -766,7 +755,7 @@ namespace PMManager
                 });
             }
             return propertiesList;
-        } 
+        }
 
         private List<Property> LoadPropertiesFromFile()
         {
@@ -796,6 +785,7 @@ namespace PMManager
                 throw new ApplicationException($"Ошибка чтения файла {openFileDialog.FileName}: {ex.Message}", ex);
             }
         }
+
 
         private List<Material> GetAllMaterials(IApplication app)
         {
