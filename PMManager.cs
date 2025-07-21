@@ -629,6 +629,22 @@ namespace PMManager
             return button;
         }
 
+        private void SetMaterialSelectionFlags(List<Material> materials, HashSet<string> savedGuids)
+        {
+            foreach (var material in materials)
+            {
+                material.IsSelected = !savedGuids.Contains(material.Guid);
+            }
+        }
+
+        private void SetLayeredMaterialSelectionFlags(List<LayeredMaterial> layeredMaterials, HashSet<string> savedGuids)
+        {
+            foreach (var material in layeredMaterials)
+            {
+                material.IsSelected = !savedGuids.Contains(material.Guid);
+            }
+        }
+
         // 9. Методы загрузки данных
         private void InitializeProjectData()
         {
@@ -664,30 +680,34 @@ namespace PMManager
             return null;
         }
 
-        public List<Material>? SelectMaterials(List<Material> materials, string title)
+        public (List<Material>?, List<LayeredMaterial>?) SelectMaterials(
+            List<Material> materials,
+            List<LayeredMaterial> layeredMaterials,
+            string title)
         {
-            // Создаем словарь Guid'ов сохраненных материалов для быстрого поиска
+            // Создаем единый словарь Guid'ов
             var savedGuids = _savedMaterials?
                 .Select(m => m.Guid)
                 .ToHashSet() ?? new HashSet<string>();
 
-            // Устанавливаем флаги IsSelected для всех материалов
-            foreach (var material in materials)
-            {
-                // Если материал есть в сохраненных - флажок выключен
-                // Если материала нет в сохраненных - флажок включен
-                material.IsSelected = !savedGuids.Contains(material.Guid);
-            }
+            // Применяем одинаковую логику к обоим типам
+            SetMaterialSelectionFlags(materials, savedGuids);
+            SetLayeredMaterialSelectionFlags(layeredMaterials, savedGuids);
 
-            ObservableCollection<Material> observableCollection = new(materials);
-            var dialog = new MaterialSelectorDialog(observableCollection, title);
+            var dialog = new MaterialSelectorDialog(
+                new ObservableCollection<Material>(materials),
+                title
+            );
+            dialog.LayeredMaterials = new ObservableCollection<LayeredMaterial>(layeredMaterials);
 
             if (dialog.ShowDialog() == true)
             {
-                return dialog.SelectedMaterials.ToList();
+                return (
+                    dialog.SelectedMaterials.ToList(),
+                    dialog.SelectedLayeredMaterials.ToList()
+                );
             }
-
-            return null;
+            return (null, null);
         }
 
         public static bool SavePropertiesToFile(
