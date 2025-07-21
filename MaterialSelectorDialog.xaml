@@ -28,147 +28,146 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TabControl Grid.Row="0" Background="#FFE7EBEE">
+        <TabControl Grid.Row="0" Background="#FFE7EBEE" Margin="0,0,0,10">
             <TabItem Header="Материалы">
-                <DataGrid x:Name="MaterialsDataGrid"
-                          SelectionChanged="MaterialsDataGrid_SelectionChanged"
-                          AutoGenerateColumns="False"
-                          SelectionMode="Single"
-                          CanUserAddRows="False"
-                          HeadersVisibility="Column"
-                          Margin="0,0,0,10"
-                          ItemsSource="{Binding}"
-                          GridLinesVisibility="None"
-                          Loaded="MaterialsDataGrid_Loaded"
-                          Sorting="MaterialsDataGrid_Sorting">
+                <Grid Margin="10">
+                    <DataGrid x:Name="MaterialsDataGrid"
+                              SelectionChanged="MaterialsDataGrid_SelectionChanged"
+                              AutoGenerateColumns="False"
+                              SelectionMode="Single"
+                              CanUserAddRows="False"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="None"
+                              ItemsSource="{Binding}"
+                              Loaded="MaterialsDataGrid_Loaded"
+                              Sorting="MaterialsDataGrid_Sorting">
 
-                    <DataGrid.Resources>
-                        <ContextMenu x:Key="RowContextMenu">
-                            <MenuItem Header="Установить" Click="SetChecked_Click"/>
-                            <MenuItem Header="Снять" Click="UncheckChecked_Click"/>
-                            <Separator/>
-                            <MenuItem Header="Установить все" Click="CheckAll_Click"/>
-                            <MenuItem Header="Снять все" Click="UncheckAll_Click"/>
-                        </ContextMenu>
+                        <DataGrid.Resources>
+                            <ContextMenu x:Key="RowContextMenu">
+                                <MenuItem Header="Установить" Click="SetChecked_Click"/>
+                                <MenuItem Header="Снять" Click="UncheckChecked_Click"/>
+                                <Separator/>
+                                <MenuItem Header="Установить все" Click="CheckAll_Click"/>
+                                <MenuItem Header="Снять все" Click="UncheckAll_Click"/>
+                            </ContextMenu>
 
-                        <Style TargetType="DataGridCell">
-                            <Setter Property="BorderBrush" Value="#FFA9B4BE"/>
-                            <Setter Property="BorderThickness" Value="0,0,1,1"/>
-                            <Setter Property="Padding" Value="4"/>
-                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-                            <Style.Resources>
-                                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#FFCBD2D8"/>
-                                <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="Black"/>
-                            </Style.Resources>
-                            <Style.Triggers>
-                                <Trigger Property="IsSelected" Value="True">
-                                    <Setter Property="BorderBrush" Value="#FFA9B4BE"/>
-                                    <Setter Property="Background" Value="#FFCBD2D8"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </DataGrid.Resources>
+                            <Style TargetType="DataGridCell">
+                                <Setter Property="BorderBrush" Value="#FFA9B4BE"/>
+                                <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                                <Setter Property="Padding" Value="4"/>
+                                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                <Style.Resources>
+                                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#FFCBD2D8"/>
+                                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="Black"/>
+                                </Style.Resources>
+                                <Style.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="BorderBrush" Value="#FFA9B4BE"/>
+                                        <Setter Property="Background" Value="#FFCBD2D8"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.Resources>
 
-                    <DataGrid.RowStyle>
-                        <Style TargetType="DataGridRow">
-                            <Setter Property="Height" Value="25"/>
-                            <Style.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="#FFE7EBEE"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </DataGrid.RowStyle>
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow">
+                                <Setter Property="Height" Value="25"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#FFE7EBEE"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.RowStyle>
 
-                    <DataGrid.Columns>
-                        <DataGridTemplateColumn Header="Имя" Width="240" SortMemberPath="Name" CanUserSort="True" SortDirection="Ascending">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
-                                                ContextMenu="{StaticResource RowContextMenu}">
-                                        <CheckBox VerticalAlignment="Center"
-                                                  Margin="5,0,0,0"
-                                                  IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                                        <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
-                                                   Margin="3,0,0,0"/>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="Имя" Width="240" SortMemberPath="Name" CanUserSort="True" SortDirection="Ascending">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
+                                                    ContextMenu="{StaticResource RowContextMenu}">
+                                            <CheckBox VerticalAlignment="Center"
+                                                      Margin="5,0,0,0"
+                                                      IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center"
+                                                       Margin="3,0,0,0"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
 
-                        <DataGridTextColumn Header="Уникальный идентификатор" Binding="{Binding Guid}" Width="Auto">
-                            <DataGridTextColumn.ElementStyle>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Margin" Value="3,0,0,0"/>
-                                    <Setter Property="VerticalAlignment" Value="Center"/>
-                                </Style>
-                            </DataGridTextColumn.ElementStyle>
-                        </DataGridTextColumn>
-                    </DataGrid.Columns>
-                </DataGrid>
+                            <DataGridTextColumn Header="Уникальный идентификатор" Binding="{Binding Guid}" Width="Auto">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Margin" Value="3,0,0,0"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
             </TabItem>
 
             <TabItem Header="Многослойные материалы">
-                <DataGrid x:Name="LayeredMaterialsDataGrid"
-                    AutoGenerateColumns="False"
-                    SelectionMode="Single"
-                    CanUserAddRows="False"
-                    HeadersVisibility="Column"
-                    Margin="0,0,0,10"
-                    GridLinesVisibility="None"
-                    Loaded="LayeredMaterialsDataGrid_Loaded">
+                <Grid Margin="10">
+                    <DataGrid x:Name="LayeredMaterialsDataGrid"
+                        AutoGenerateColumns="False"
+                        SelectionMode="Single"
+                        CanUserAddRows="False"
+                        HeadersVisibility="Column"
+                        GridLinesVisibility="None"
+                        Loaded="LayeredMaterialsDataGrid_Loaded">
 
-                    <DataGrid.Resources>
-                        <ContextMenu x:Key="LayeredRowContextMenu">
-                            <MenuItem Header="Установить" Click="SetLayeredChecked_Click"/>
-                            <MenuItem Header="Снять" Click="UncheckLayeredChecked_Click"/>
-                            <Separator/>
-                            <MenuItem Header="Установить все" Click="CheckAllLayered_Click"/>
-                            <MenuItem Header="Снять все" Click="UncheckAllLayered_Click"/>
-                        </ContextMenu>
+                        <DataGrid.Resources>
+                            <ContextMenu x:Key="LayeredRowContextMenu">
+                                <MenuItem Header="Установить" Click="SetLayeredChecked_Click"/>
+                                <MenuItem Header="Снять" Click="UncheckLayeredChecked_Click"/>
+                                <Separator/>
+                                <MenuItem Header="Установить все" Click="CheckAllLayered_Click"/>
+                                <MenuItem Header="Снять все" Click="UncheckAllLayered_Click"/>
+                            </ContextMenu>
 
-                        <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
-                            <Setter Property="BorderBrush" Value="#FFA9B4BE"/>
-                            <Setter Property="BorderThickness" Value="0,0,1,1"/>
-                            <Setter Property="Padding" Value="4"/>
-                        </Style>
-                    </DataGrid.Resources>
+                            <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+                                <Setter Property="BorderBrush" Value="#FFA9B4BE"/>
+                                <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                                <Setter Property="Padding" Value="4"/>
+                            </Style>
+                        </DataGrid.Resources>
 
-                    <DataGrid.RowStyle>
-                        <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
-                            <Setter Property="Height" Value="25"/>
-                        </Style>
-                    </DataGrid.RowStyle>
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+                                <Setter Property="Height" Value="25"/>
+                            </Style>
+                        </DataGrid.RowStyle>
 
-                    <DataGrid.Columns>
-                        <!-- Колонка имени -->
-                        <DataGridTemplateColumn Header="Имя" Width="240" SortMemberPath="Name">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
-                        ContextMenu="{StaticResource LayeredRowContextMenu}">
-                                        <CheckBox VerticalAlignment="Center"
-                            Margin="5,0,0,0"
-                            IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                                        <TextBlock Text="{Binding Name}" 
-                            Margin="3,0,0,0"
-                            VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="Имя" Width="240" SortMemberPath="Name">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
+                                            ContextMenu="{StaticResource LayeredRowContextMenu}">
+                                            <CheckBox VerticalAlignment="Center"
+                                                Margin="5,0,0,0"
+                                                IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                            <TextBlock Text="{Binding Name}" 
+                                                Margin="3,0,0,0"
+                                                VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
 
-                        <!-- Колонка GUID -->
-                        <DataGridTextColumn Header="Уникальный идентификатор" 
-            Binding="{Binding Guid}" 
-            Width="300"/>
+                            <DataGridTextColumn Header="Уникальный идентификатор" 
+                                Binding="{Binding Guid}" 
+                                Width="300"/>
 
-                        <!-- Колонка типа объекта -->
-                        <DataGridTextColumn Header="Тип объекта" 
-            Binding="{Binding LayeredMaterialGroup}" 
-            Width="200"/>
-                    </DataGrid.Columns>
-                </DataGrid>
+                            <DataGridTextColumn Header="Тип объекта" 
+                                Binding="{Binding LayeredMaterialGroup}" 
+                                Width="200"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
             </TabItem>
         </TabControl>
 
