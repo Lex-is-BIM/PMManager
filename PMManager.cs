@@ -477,30 +477,55 @@ namespace PMManager
         //6. Методы для работы с материалами
         public void RemoveMaterials()
         {
+            // Получаем обычные материалы
             var allMaterials = GetAllMaterials(_app);
-            if (allMaterials.Count == 0)
+            var allLayeredMaterials = GetAllLayeredMaterials(_app);
+
+            // Проверяем наличие материалов
+            if (allMaterials.Count == 0 && allLayeredMaterials.Count == 0)
             {
                 ShowMessage("Нет материалов", "В проекте нет доступных материалов для удаления");
                 return;
             }
 
-            var selectedMaterials = SelectMaterials(allMaterials, "Выбор удаляемых материалов");
-            if (selectedMaterials == null) return; // Пользователь отменил выбор
+            // Создаем коллекции для выбора
+            var materialsCollection = new ObservableCollection<Material>(allMaterials);
+            var layeredMaterialsCollection = new ObservableCollection<LayeredMaterial>(allLayeredMaterials);
 
-            if (selectedMaterials.Count == 0)
+            // Открываем диалог выбора
+            var dialog = new MaterialSelectorDialog(materialsCollection, "Выбор удаляемых материалов");
+            dialog.LayeredMaterials = layeredMaterialsCollection; // Передаем коллекцию многослойных материалов
+
+            if (dialog.ShowDialog() != true)
+                return;
+
+            // Собираем выбранные материалы
+            var selectedMaterials = dialog.SelectedMaterials.ToList();
+            var selectedLayeredMaterials = dialog.SelectedLayeredMaterials.ToList();
+
+            if (selectedMaterials.Count == 0 && selectedLayeredMaterials.Count == 0)
             {
                 ShowMessage("Отмена удаления", "Нет выбранных материалов для удаления");
                 return;
             }
 
-            string message = $"Будет удалено {selectedMaterials.Count} " +
-                            GetNounForm(selectedMaterials.Count, "материал", "материала", "материалов");
+            // Формируем сообщение с количеством удаляемых материалов
+            int totalCount = selectedMaterials.Count + selectedLayeredMaterials.Count;
+            string message = $"Будет удалено {totalCount} " +
+                GetNounForm(totalCount, "материал", "материала", "материалов");
 
             if (!ConfirmAction("Подтверждение удаления", message))
                 return;
 
+            // Выполняем удаление
             ExecuteOperation(() =>
-                selectedMaterials.ForEach(m => _app.Project.Materials.RemoveByUniqueIdS(m.Guid)));
+            {
+                foreach (var material in selectedMaterials)
+                    _app.Project.Materials.RemoveByUniqueIdS(material.Guid);
+
+                foreach (var layeredMaterial in selectedLayeredMaterials)
+                    _app.Project.LayeredMaterials.RemoveByUniqueIdS(layeredMaterial.Guid);
+            });
         }
 
         private void ConfigureMaterialsExclusion()

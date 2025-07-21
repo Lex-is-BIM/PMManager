@@ -110,16 +110,21 @@
 
             <TabItem Header="Многослойные материалы">
                 <DataGrid x:Name="LayeredMaterialsDataGrid"
-              AutoGenerateColumns="False"
-              SelectionMode="Single"
-              CanUserAddRows="False"
-              HeadersVisibility="Column"
-              Margin="0,0,0,10"
-              GridLinesVisibility="None">
+                    AutoGenerateColumns="False"
+                    SelectionMode="Single"
+                    CanUserAddRows="False"
+                    HeadersVisibility="Column"
+                    Margin="0,0,0,10"
+                    GridLinesVisibility="None"
+                    Loaded="LayeredMaterialsDataGrid_Loaded">
 
                     <DataGrid.Resources>
                         <ContextMenu x:Key="LayeredRowContextMenu">
-                            <!-- Пока оставляем пустым -->
+                            <MenuItem Header="Установить" Click="SetLayeredChecked_Click"/>
+                            <MenuItem Header="Снять" Click="UncheckLayeredChecked_Click"/>
+                            <Separator/>
+                            <MenuItem Header="Установить все" Click="CheckAllLayered_Click"/>
+                            <MenuItem Header="Снять все" Click="UncheckAllLayered_Click"/>
                         </ContextMenu>
 
                         <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
@@ -136,31 +141,32 @@
                     </DataGrid.RowStyle>
 
                     <DataGrid.Columns>
+                        <!-- Колонка имени -->
                         <DataGridTemplateColumn Header="Имя" Width="240" SortMemberPath="Name">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
+                        ContextMenu="{StaticResource LayeredRowContextMenu}">
                                         <CheckBox VerticalAlignment="Center"
-                                      Margin="5,0,0,0"
-                                      IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            Margin="5,0,0,0"
+                            IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                         <TextBlock Text="{Binding Name}" 
-                                       Margin="3,0,0,0"
-                                       VerticalAlignment="Center"/>
+                            Margin="3,0,0,0"
+                            VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
 
-                        <DataGridTextColumn Header="Уникальный идентификатор" Binding="{Binding Guid}" Width="*">
-                            <DataGridTextColumn.ElementStyle>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Margin" Value="3,0,0,0"/>
-                                    <Setter Property="VerticalAlignment" Value="Center"/>
-                                </Style>
-                            </DataGridTextColumn.ElementStyle>
-                        </DataGridTextColumn>
+                        <!-- Колонка GUID -->
+                        <DataGridTextColumn Header="Уникальный идентификатор" 
+            Binding="{Binding Guid}" 
+            Width="300"/>
 
-                        <DataGridTextColumn Header="Группа" Binding="{Binding LayeredMaterialGroup}" Width="*"/>
+                        <!-- Колонка типа объекта -->
+                        <DataGridTextColumn Header="Тип объекта" 
+            Binding="{Binding LayeredMaterialGroup}" 
+            Width="200"/>
                     </DataGrid.Columns>
                 </DataGrid>
             </TabItem>

@@ -22,9 +22,21 @@ namespace PMManager
     /// </summary>
     public partial class MaterialSelectorDialog : Window
     {
-        private readonly ObservableCollection<Material> _materials;
-        private readonly ObservableCollection<LayeredMaterial> _layeredMaterials;
-        private readonly string _title;
+        private ObservableCollection<Material> _materials;
+        private ObservableCollection<LayeredMaterial> _layeredMaterials;
+        private string _title;
+
+        // Изменяем реализацию свойства
+        public ObservableCollection<LayeredMaterial> LayeredMaterials
+        {
+            get { return _layeredMaterials; }
+            set
+            {
+                _layeredMaterials = new ObservableCollection<LayeredMaterial>(value);
+                LayeredMaterialsDataGrid.ItemsSource = _layeredMaterials;
+                InitializeLayeredMaterialsSorting(); // Добавляем сортировку при установке
+            }
+        }
 
         public MaterialSelectorDialog(ObservableCollection<Material> materials, string title)
         {
@@ -34,18 +46,19 @@ namespace PMManager
             Title = _title;
             MaterialsDataGrid.ItemsSource = _materials;
 
-            // Инициализация для многослойных материалов
+            // Инициализируем коллекцию многослойных материалов
             _layeredMaterials = new ObservableCollection<LayeredMaterial>();
             LayeredMaterialsDataGrid.ItemsSource = _layeredMaterials;
+
+            // Добавляем инициализацию сортировки
+            InitializeLayeredMaterialsSorting();
         }
-        /// <summary>
-        /// Возвращает выбранные материалы
-        /// </summary>
+
         public IEnumerable<Material> SelectedMaterials =>
             _materials.Where(m => m.IsSelected);
 
         public IEnumerable<LayeredMaterial> SelectedLayeredMaterials =>
-        _layeredMaterials.Where(m => m.IsSelected);
+            _layeredMaterials.Where(m => m.IsSelected); 
 
         private void ButtonOk_Click(object sender, RoutedEventArgs e)
         {
@@ -101,6 +114,42 @@ namespace PMManager
             }
         }
 
+        // Установить выделение для выбранного многослойного материала
+        private void SetLayeredChecked_Click(object sender, RoutedEventArgs e)
+        {
+            if (LayeredMaterialsDataGrid.SelectedItem is LayeredMaterial selectedMaterial)
+            {
+                selectedMaterial.IsSelected = true;
+            }
+        }
+
+        // Снять выделение с выбранного многослойного материала
+        private void UncheckLayeredChecked_Click(object sender, RoutedEventArgs e)
+        {
+            if (LayeredMaterialsDataGrid.SelectedItem is LayeredMaterial selectedMaterial)
+            {
+                selectedMaterial.IsSelected = false;
+            }
+        }
+
+        // Выделить все многослойные материалы
+        private void CheckAllLayered_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (var material in _layeredMaterials)
+            {
+                material.IsSelected = true;
+            }
+        }
+
+        // Снять выделение со всех многослойных материалов
+        private void UncheckAllLayered_Click(object sender, RoutedEventArgs e)
+        {
+            foreach (var material in _layeredMaterials)
+            {
+                material.IsSelected = false;
+            }
+        }
+
         private void MaterialsDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             MaterialsDataGrid.CommitEdit();
@@ -123,13 +172,22 @@ namespace PMManager
             e.Handled = false;
         }
 
-        private void LoadLayeredMaterials(IEnumerable<LayeredMaterial> materials)
+        private void InitializeLayeredMaterialsSorting()
         {
-            _layeredMaterials.Clear();
-            foreach (var material in materials)
+            var column = LayeredMaterialsDataGrid.Columns.FirstOrDefault(c => c.SortMemberPath == "Name");
+            if (column != null)
             {
-                _layeredMaterials.Add(material);
+                LayeredMaterialsDataGrid.Items.SortDescriptions.Clear();
+                LayeredMaterialsDataGrid.Items.SortDescriptions.Add(
+                    new SortDescription("Name", ListSortDirection.Ascending));
+                column.SortDirection = ListSortDirection.Ascending;
+                LayeredMaterialsDataGrid.Items.Refresh();
             }
+        }
+
+        private void LayeredMaterialsDataGrid_Loaded(object sender, RoutedEventArgs e)
+        {
+            InitializeLayeredMaterialsSorting();
         }
     }
 }
