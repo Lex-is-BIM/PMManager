@@ -898,18 +898,19 @@ namespace PMManager
 
             foreach (int layeredMaterialId in layeredMaterialIds)
             {
-                // Получаем интерфейс ILayeredMaterial для доступа к имени и группе
                 ILayeredMaterial layeredMaterial = layeredMaterialManager.GetLayeredMaterial(layeredMaterialId);
                 LayeredMaterialGroup group = layeredMaterial.GetIdGroupPair().Group;
 
-                // Получаем интерфейс IEntity для доступа к UniqueIdS
+                // Используем новый метод для получения названия группы
+                string groupName = LayeredMaterialHelper.GetGroupDisplayName(group);
+
                 IEntity layeredMaterialEntity = layeredMaterials.GetById(layeredMaterialId);
 
                 result.Add(new LayeredMaterial
                 {
                     Guid = layeredMaterialEntity.UniqueIdS.ToLower(),
                     Name = layeredMaterial.Name,
-                    LayeredMaterialGroup = group.ToString() // Явное преобразование группы в строку
+                    LayeredMaterialGroup = groupName
                 });
             }
 
@@ -1027,8 +1028,8 @@ namespace PMManager
 
         public class LayeredMaterial : IEquatable<LayeredMaterial>, INotifyPropertyChanged
         {
-            private bool _isSelected;
 
+            private bool _isSelected;
             public required string Guid { get; init; }
             public required string Name { get; init; }
             public required string LayeredMaterialGroup { get; init; }
@@ -1073,6 +1074,23 @@ namespace PMManager
             // Дополнительный метод с именем класса для ясности (опционально)
             protected void OnLayeredMaterialChanged([CallerMemberName] string? propertyName = null)
                 => OnPropertyChanged(propertyName);
+        }
+
+        public static class LayeredMaterialHelper
+        {
+            private static readonly Dictionary<LayeredMaterialGroup, string> GroupNames = new()
+            {
+                { LayeredMaterialGroup.LayeredMaterialGroup_Undefined, "Не определено" },
+                { LayeredMaterialGroup.LayeredMaterialGroup_Wall, "Стена" },
+                { LayeredMaterialGroup.LayeredMaterialGroup_Floor, "Пол" },
+                { LayeredMaterialGroup.LayeredMaterialGroup_Roof, "Крыша" },
+                { LayeredMaterialGroup.LayeredMaterialGroup_Insulation, "Изоляция" }
+            };
+
+            public static string GetGroupDisplayName(LayeredMaterialGroup group)
+            {
+                return GroupNames.TryGetValue(group, out string result) ? result : "Неизвестная группа";
+            }
         }
     }
 }
