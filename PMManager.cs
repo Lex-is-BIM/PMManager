@@ -24,7 +24,7 @@ namespace PMManager
         private readonly Renga.Application _app = new();
         private List<Property> _savedProperties = new();
         private List<Material> _savedMaterials = new();
-        private List<LayeredMaterial> _savedlayerdMaterials = new();
+        private List<LayeredMaterial> _savedLayeredMaterials = new();
         private static readonly Dictionary<string, string> ObjectTypeNames = new()
         {
             ["67a0b42c-8c1e-47e8-b46e-78d8bb260de0"] = "3D-модели",
@@ -477,7 +477,7 @@ namespace PMManager
         //6. Методы для работы с материалами
         public void RemoveMaterials()
         {
-            // Получаем обычные материалы
+            // Получаем все материалы
             var allMaterials = GetAllMaterials(_app);
             var allLayeredMaterials = GetAllLayeredMaterials(_app);
 
@@ -488,34 +488,30 @@ namespace PMManager
                 return;
             }
 
-            // Создаем коллекции для выбора
-            var materialsCollection = new ObservableCollection<Material>(allMaterials);
-            var layeredMaterialsCollection = new ObservableCollection<LayeredMaterial>(allLayeredMaterials);
+            // Используем новый метод SelectMaterials
+            var selected = SelectMaterials(allMaterials, allLayeredMaterials, "Выбор удаляемых материалов");
+            if (selected == null) return;
 
-            // Открываем диалог выбора
-            var dialog = new MaterialSelectorDialog(materialsCollection, "Выбор удаляемых материалов");
-            dialog.LayeredMaterials = layeredMaterialsCollection; // Передаем коллекцию многослойных материалов
+            var (selectedMaterials, selectedLayeredMaterials) = selected.Value;
 
-            if (dialog.ShowDialog() != true)
-                return;
-
-            // Собираем выбранные материалы
-            var selectedMaterials = dialog.SelectedMaterials.ToList();
-            var selectedLayeredMaterials = dialog.SelectedLayeredMaterials.ToList();
-
+            // Проверяем выбор
             if (selectedMaterials.Count == 0 && selectedLayeredMaterials.Count == 0)
             {
                 ShowMessage("Отмена удаления", "Нет выбранных материалов для удаления");
                 return;
             }
 
-            // Формируем сообщение с количеством удаляемых материалов
+            // Подтверждение
             int totalCount = selectedMaterials.Count + selectedLayeredMaterials.Count;
             string message = $"Будет удалено {totalCount} " +
                 GetNounForm(totalCount, "материал", "материала", "материалов");
 
             if (!ConfirmAction("Подтверждение удаления", message))
                 return;
+
+            // Удаляем из сохраненных списков
+            _savedMaterials?.RemoveAll(m => selectedMaterials.Any(sm => sm.Guid == m.Guid));
+            _savedLayeredMaterials?.RemoveAll(m => selectedLayeredMaterials.Any(sm => sm.Guid == m.Guid));
 
             // Выполняем удаление
             ExecuteOperation(() =>
@@ -531,29 +527,56 @@ namespace PMManager
         private void ConfigureMaterialsExclusion()
         {
             var allMaterials = GetAllMaterials(_app);
-            if (allMaterials.Count == 0)
+            var allLayeredMaterials = GetAllLayeredMaterials(_app);
+
+            if (allMaterials.Count == 0 && allLayeredMaterials.Count == 0)
             {
                 ShowMessage("Нет материалов", "В проекте нет доступных материалов для настройки");
                 return;
             }
 
-            foreach (var mat in allMaterials)
-            {
-                mat.IsSelected = _savedMaterials.Any(sm => sm.Guid == mat.Guid);
-            }
+            // Настраиваем флажки для обычных материалов
+            ConfigureSelectionFlags(allMaterials, _savedMaterials);
+            ConfigureLayeredSelectionFlags(allLayeredMaterials, _savedLayeredMaterials);
 
-            var dialog = new MaterialSelectorDialog(new ObservableCollection<Material>(allMaterials),
-                "Настройка списка исключений материалов");
+            var dialog = new MaterialSelectorDialog(
+                new ObservableCollection<Material>(allMaterials),
+                "Настройка списка исключений материалов"
+            );
+            dialog.LayeredMaterials = new ObservableCollection<LayeredMaterial>(allLayeredMaterials);
 
             if (dialog.ShowDialog() == true)
             {
                 var selectedMaterials = dialog.SelectedMaterials.ToList();
+                var selectedLayeredMaterials = dialog.SelectedLayeredMaterials.ToList();
 
+                // Сохраняем выбранные обычные материалы
                 _savedMaterials.Clear();
                 _savedMaterials.AddRange(selectedMaterials);
 
+                // Сохраняем выбранные многослойные материалы
+                _savedLayeredMaterials.Clear();
+                _savedLayeredMaterials.AddRange(selectedLayeredMaterials);
+
+                int totalCount = _savedMaterials.Count + _savedLayeredMaterials.Count;
                 ShowMessage("Настройки сохранены",
-                    $"Настроено {_savedMaterials.Count} {GetNounForm(_savedMaterials.Count, "материал", "материала", "материалов")}");
+                    $"Настроено {totalCount} {GetNounForm(totalCount, "материал", "материала", "материалов")}");
+            }
+        }
+
+        private void ConfigureSelectionFlags(List<Material> materials, List<Material> savedMaterials)
+        {
+            foreach (var mat in materials)
+            {
+                mat.IsSelected = savedMaterials.Any(sm => sm.Guid == mat.Guid);
+            }
+        }
+
+        private void ConfigureLayeredSelectionFlags(List<LayeredMaterial> layeredMaterials, List<LayeredMaterial> savedLayeredMaterials)
+        {
+            foreach (var mat in layeredMaterials)
+            {
+                mat.IsSelected = savedLayeredMaterials.Any(sm => sm.Guid == mat.Guid);
             }
         }
 
@@ -650,6 +673,7 @@ namespace PMManager
         {
             _savedProperties = GetAllProperties(_app);
             _savedMaterials = GetAllMaterials(_app);
+            _savedLayeredMaterials = GetAllLayeredMaterials(_app);
         }
 
         private void OnProjectCreated() => InitializeProjectData();
@@ -680,26 +704,37 @@ namespace PMManager
             return null;
         }
 
-        public (List<Material>?, List<LayeredMaterial>?) SelectMaterials(
+        public (List<Material> Materials, List<LayeredMaterial> LayeredMaterials)? SelectMaterials(
             List<Material> materials,
             List<LayeredMaterial> layeredMaterials,
             string title)
         {
-            // Создаем единый словарь Guid'ов
-            var savedGuids = _savedMaterials?
-                .Select(m => m.Guid)
-                .ToHashSet() ?? new HashSet<string>();
+            // Создаем словари сохраненных материалов для быстрого поиска
+            var savedMaterialGuids = _savedMaterials?.ToDictionary(m => m.Guid) ?? new Dictionary<string, Material>();
+            var savedLayeredMaterialGuids = _savedLayeredMaterials?.ToDictionary(m => m.Guid) ?? new Dictionary<string, LayeredMaterial>();
 
-            // Применяем одинаковую логику к обоим типам
-            SetMaterialSelectionFlags(materials, savedGuids);
-            SetLayeredMaterialSelectionFlags(layeredMaterials, savedGuids);
+            // Устанавливаем флаги IsSelected
+            foreach (var material in materials)
+            {
+                material.IsSelected = !savedMaterialGuids.ContainsKey(material.Guid);
+            }
 
-            var dialog = new MaterialSelectorDialog(
-                new ObservableCollection<Material>(materials),
-                title
-            );
-            dialog.LayeredMaterials = new ObservableCollection<LayeredMaterial>(layeredMaterials);
+            foreach (var layeredMaterial in layeredMaterials)
+            {
+                layeredMaterial.IsSelected = !savedLayeredMaterialGuids.ContainsKey(layeredMaterial.Guid);
+            }
 
+            // Создаем ObservableCollection для привязки
+            var materialsCollection = new ObservableCollection<Material>(materials);
+            var layeredMaterialsCollection = new ObservableCollection<LayeredMaterial>(layeredMaterials);
+
+            // Создаем и настраиваем диалог
+            var dialog = new MaterialSelectorDialog(materialsCollection, title)
+            {
+                LayeredMaterials = layeredMaterialsCollection
+            };
+
+            // Показываем диалог и возвращаем результат
             if (dialog.ShowDialog() == true)
             {
                 return (
@@ -707,7 +742,8 @@ namespace PMManager
                     dialog.SelectedLayeredMaterials.ToList()
                 );
             }
-            return (null, null);
+
+            return null;
         }
 
         public static bool SavePropertiesToFile(
@@ -830,7 +866,6 @@ namespace PMManager
                 throw new ApplicationException($"Ошибка чтения файла {openFileDialog.FileName}: {ex.Message}", ex);
             }
         }
-
 
         private List<Material> GetAllMaterials(IApplication app)
         {
