@@ -23,6 +23,7 @@ namespace PMManager
     public partial class MaterialSelectorDialog : Window
     {
         private readonly ObservableCollection<Material> _materials;
+        private readonly ObservableCollection<LayeredMaterial> _layeredMaterials;
         private readonly string _title;
 
         public MaterialSelectorDialog(ObservableCollection<Material> materials, string title)
@@ -32,13 +33,19 @@ namespace PMManager
             _title = title;
             Title = _title;
             MaterialsDataGrid.ItemsSource = _materials;
-        }
 
+            // Инициализация для многослойных материалов
+            _layeredMaterials = new ObservableCollection<LayeredMaterial>();
+            LayeredMaterialsDataGrid.ItemsSource = _layeredMaterials;
+        }
         /// <summary>
         /// Возвращает выбранные материалы
         /// </summary>
         public IEnumerable<Material> SelectedMaterials =>
             _materials.Where(m => m.IsSelected);
+
+        public IEnumerable<LayeredMaterial> SelectedLayeredMaterials =>
+        _layeredMaterials.Where(m => m.IsSelected);
 
         private void ButtonOk_Click(object sender, RoutedEventArgs e)
         {
@@ -114,6 +121,15 @@ namespace PMManager
         private void MaterialsDataGrid_Sorting(object sender, DataGridSortingEventArgs e)
         {
             e.Handled = false;
+        }
+
+        private void LoadLayeredMaterials(IEnumerable<LayeredMaterial> materials)
+        {
+            _layeredMaterials.Clear();
+            foreach (var material in materials)
+            {
+                _layeredMaterials.Add(material);
+            }
         }
     }
 }

@@ -109,8 +109,60 @@
             </TabItem>
 
             <TabItem Header="Многослойные материалы">
-                <!-- Здесь будет размещен новый DataGrid для многослойных материалов -->
-                <Grid Background="#FFE7EBEE"/>
+                <DataGrid x:Name="LayeredMaterialsDataGrid"
+              AutoGenerateColumns="False"
+              SelectionMode="Single"
+              CanUserAddRows="False"
+              HeadersVisibility="Column"
+              Margin="0,0,0,10"
+              GridLinesVisibility="None">
+
+                    <DataGrid.Resources>
+                        <ContextMenu x:Key="LayeredRowContextMenu">
+                            <!-- Пока оставляем пустым -->
+                        </ContextMenu>
+
+                        <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+                            <Setter Property="BorderBrush" Value="#FFA9B4BE"/>
+                            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                            <Setter Property="Padding" Value="4"/>
+                        </Style>
+                    </DataGrid.Resources>
+
+                    <DataGrid.RowStyle>
+                        <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+                            <Setter Property="Height" Value="25"/>
+                        </Style>
+                    </DataGrid.RowStyle>
+
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn Header="Имя" Width="240" SortMemberPath="Name">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <CheckBox VerticalAlignment="Center"
+                                      Margin="5,0,0,0"
+                                      IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                        <TextBlock Text="{Binding Name}" 
+                                       Margin="3,0,0,0"
+                                       VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTextColumn Header="Уникальный идентификатор" Binding="{Binding Guid}" Width="*">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Margin" Value="3,0,0,0"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <DataGridTextColumn Header="Группа" Binding="{Binding LayeredMaterialGroup}" Width="*"/>
+                    </DataGrid.Columns>
+                </DataGrid>
             </TabItem>
         </TabControl>
 
