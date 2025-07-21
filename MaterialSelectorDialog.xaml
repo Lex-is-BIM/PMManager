@@ -112,12 +112,12 @@
             <TabItem Header="Многослойные материалы">
                 <Grid Margin="10">
                     <DataGrid x:Name="LayeredMaterialsDataGrid"
-                        AutoGenerateColumns="False"
-                        SelectionMode="Single"
-                        CanUserAddRows="False"
-                        HeadersVisibility="Column"
-                        GridLinesVisibility="None"
-                        Loaded="LayeredMaterialsDataGrid_Loaded">
+          AutoGenerateColumns="False"
+          SelectionMode="Single"
+          CanUserAddRows="False"
+          HeadersVisibility="Column"
+          GridLinesVisibility="None"
+          Loaded="LayeredMaterialsDataGrid_Loaded">
 
                         <DataGrid.Resources>
                             <ContextMenu x:Key="LayeredRowContextMenu">
@@ -128,16 +128,32 @@
                                 <MenuItem Header="Снять все" Click="UncheckAllLayered_Click"/>
                             </ContextMenu>
 
-                            <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+                            <Style TargetType="DataGridCell">
                                 <Setter Property="BorderBrush" Value="#FFA9B4BE"/>
                                 <Setter Property="BorderThickness" Value="0,0,1,1"/>
                                 <Setter Property="Padding" Value="4"/>
+                                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                <Style.Resources>
+                                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#FFCBD2D8"/>
+                                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="Black"/>
+                                </Style.Resources>
+                                <Style.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="BorderBrush" Value="#FFA9B4BE"/>
+                                        <Setter Property="Background" Value="#FFCBD2D8"/>
+                                    </Trigger>
+                                </Style.Triggers>
                             </Style>
                         </DataGrid.Resources>
 
                         <DataGrid.RowStyle>
-                            <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+                            <Style TargetType="DataGridRow">
                                 <Setter Property="Height" Value="25"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#FFE7EBEE"/>
+                                    </Trigger>
+                                </Style.Triggers>
                             </Style>
                         </DataGrid.RowStyle>
 
@@ -146,25 +162,25 @@
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
-                                            ContextMenu="{StaticResource LayeredRowContextMenu}">
+                                ContextMenu="{StaticResource LayeredRowContextMenu}">
                                             <CheckBox VerticalAlignment="Center"
-                                                Margin="5,0,0,0"
-                                                IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                  Margin="5,0,0,0"
+                                  IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                             <TextBlock Text="{Binding Name}" 
-                                                Margin="3,0,0,0"
-                                                VerticalAlignment="Center"/>
+                                  Margin="3,0,0,0"
+                                  VerticalAlignment="Center"/>
                                         </StackPanel>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
                             <DataGridTextColumn Header="Уникальный идентификатор" 
-                                Binding="{Binding Guid}" 
-                                Width="300"/>
+                            Binding="{Binding Guid}" 
+                            Width="300"/>
 
                             <DataGridTextColumn Header="Тип объекта" 
-                                Binding="{Binding LayeredMaterialGroup}" 
-                                Width="200"/>
+                            Binding="{Binding LayeredMaterialGroup}" 
+                            Width="200"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
