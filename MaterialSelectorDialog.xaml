@@ -21,6 +21,15 @@
                 <ResourceDictionary Source="pack://application:,,,/Renga.WPF.Styles;component/Themes/Renga.Implicit.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <converters:ColorConverter x:Key="ColorConverter"/>
+            <Style x:Key="ValueTextStyle" TargetType="TextBlock">
+                <Setter Property="HorizontalAlignment" Value="Left"/>
+            </Style>
+
+            <Style x:Key="UnitTextStyle" TargetType="TextBlock">
+                <Setter Property="Foreground" Value="#808097"/>
+                <Setter Property="HorizontalAlignment" Value="Right"/>
+                <Setter Property="Margin" Value="3,0,0,0"/>
+            </Style>
         </ResourceDictionary>
     </Window.Resources>
 
@@ -83,7 +92,7 @@
                         </DataGrid.RowStyle>
 
                         <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="Имя" Width="240" SortMemberPath="Name" CanUserSort="True" SortDirection="Ascending">
+                            <DataGridTemplateColumn Header="Имя" Width="400" SortMemberPath="Name" CanUserSort="True" SortDirection="Ascending">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
@@ -98,16 +107,16 @@
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
-                            <DataGridTextColumn Header="Уникальный идентификатор" Binding="{Binding Guid}" Width="Auto">
+                            <!--<DataGridTextColumn Header="Уникальный идентификатор" Binding="{Binding Guid}" Width="Auto">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Margin" Value="3,0,0,0"/>
                                         <Setter Property="VerticalAlignment" Value="Center"/>
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>                             
-                            </DataGridTextColumn>
+                            </DataGridTextColumn>-->
 
-                            <DataGridTemplateColumn Header="Цвет">
+                            <DataGridTemplateColumn Header="Цвет" Width="130" CanUserSort="True">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" Margin="3,0,0,0">
@@ -122,6 +131,58 @@
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
+                            <DataGridTemplateColumn Header="Плотность" Width="130" CanUserSort="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Числовое значение с отступом 3px слева -->
+                                            <TextBlock Text="{Binding Density, StringFormat={}{0:F2}}"
+                                                       Grid.Column="0"
+                                                       HorizontalAlignment="Left"
+                                                       Margin="3,0,0,0"/>
+
+                                            <!-- Единицы измерения серым цветом справа -->
+                                            <TextBlock Text="кг/м³"
+                                                       Grid.Column="1"
+                                                       Foreground="Gray"
+                                                       HorizontalAlignment="Right"
+                                                        Margin="0,0,3,0"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <DataGridTemplateColumn Header="Теплопроводность" Width="130" CanUserSort="True">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Числовое значение с отступом 3px слева -->
+                                            <TextBlock Text="{Binding ThermalConductivity, StringFormat={}{0:F2}}"
+                                                       Grid.Column="0"
+                                                       HorizontalAlignment="Left"
+                                                       Margin="3,0,0,0"/>
+
+                                            <!-- Единицы измерения серым цветом справа -->
+                                            <TextBlock Text="Вт/(м·К)"
+                                                       Grid.Column="1"
+                                                       Foreground="Gray"
+                                                       HorizontalAlignment="Right"
+                                                       Margin="0,0,3,0"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -130,12 +191,12 @@
             <TabItem Header="Многослойные материалы">
                 <Grid Margin="10">
                     <DataGrid x:Name="LayeredMaterialsDataGrid"
-          AutoGenerateColumns="False"
-          SelectionMode="Single"
-          CanUserAddRows="False"
-          HeadersVisibility="Column"
-          GridLinesVisibility="None"
-          Loaded="LayeredMaterialsDataGrid_Loaded">
+                      AutoGenerateColumns="False"
+                      SelectionMode="Single"
+                      CanUserAddRows="False"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="None"
+                      Loaded="LayeredMaterialsDataGrid_Loaded">
 
                         <DataGrid.Resources>
                             <ContextMenu x:Key="LayeredRowContextMenu">
@@ -176,7 +237,7 @@
                         </DataGrid.RowStyle>
 
                         <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="Имя" Width="240" SortMemberPath="Name">
+                            <DataGridTemplateColumn Header="Имя" Width="400" SortMemberPath="Name">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
@@ -192,13 +253,13 @@
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
-                            <DataGridTextColumn Header="Уникальный идентификатор" 
+                            <!--<DataGridTextColumn Header="Уникальный идентификатор" 
                             Binding="{Binding Guid}" 
-                            Width="300"/>
+                            Width="300"/>-->
 
                             <DataGridTextColumn Header="Тип объекта" 
                             Binding="{Binding LayeredMaterialGroup}" 
-                            Width="200"/>
+                            Width="130"/>
 
                         </DataGrid.Columns>
                     </DataGrid>

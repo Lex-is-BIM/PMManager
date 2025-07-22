@@ -871,20 +871,36 @@ namespace PMManager
         {
             var materials = app.Project.Materials;
             var result = new List<Material>(materials.Count);
+
+            // UUID параметров
             string colorUuid = "{87d2df84-d69e-495f-a46e-4468185268c3}";
+            string densityUuid = "{469788e6-d7a6-4f73-90cc-fa756b14bc5c}";
+            string thermalConductivityUuid = "{7a332a5a-36c6-498d-9625-c3946f05a8df}";
 
             for (int i = 0; i < materials.Count; i++)
             {
                 var material = materials.GetByIndex(i);
                 var materialParameters = material as IParameterContainer;
+
+                // Получаем цвет
                 IParameter materialColor = materialParameters.GetS(colorUuid);
                 int materialColorInt = materialColor.GetIntValue();
+
+                // Получаем плотность
+                IParameter materialDensity = materialParameters.GetS(densityUuid);
+                double densityValue = materialDensity.GetDoubleValue();
+
+                // Получаем теплопроводность
+                IParameter materialThermalConductivity = materialParameters.GetS(thermalConductivityUuid);
+                double thermalConductivityValue = materialThermalConductivity.GetDoubleValue();
 
                 var newMaterial = new Material
                 {
                     Guid = material.UniqueIdS.ToLower(),
                     Name = material.Name,
-                    Color = System.Drawing.Color.FromArgb(materialColorInt)
+                    Color = System.Drawing.Color.FromArgb(materialColorInt),
+                    Density = densityValue,
+                    ThermalConductivity = thermalConductivityValue
                 };
 
                 result.Add(newMaterial);
@@ -991,6 +1007,14 @@ namespace PMManager
             public required string Guid { get; init; }
             public required string Name { get; init; }
 
+            // Новые свойства (только для чтения)
+            public double Density { get; init; }
+            public double ThermalConductivity { get; init; }
+
+            // Форматированные версии для отображения
+            public string DensityDisplay => $"{Density:F2} кг/м³";
+            public string ThermalConductivityDisplay => $"{ThermalConductivity:F4} Вт/(м·К)";
+
             [JsonIgnore]
             public bool IsSelected
             {
@@ -1014,14 +1038,14 @@ namespace PMManager
                     {
                         _color = value;
                         OnPropertyChanged();
-                        OnPropertyChanged(nameof(RgbValue)); // Обновляем привязанное свойство
+                        OnPropertyChanged(nameof(RgbValue));
                     }
                 }
             }
 
             public string RgbValue => $"{Color.R}, {Color.G}, {Color.B}";
 
-            // Реализация IEquatable<T>
+            // Реализация IEquatable<T> остается без изменений
             public override bool Equals(object? obj) =>
                 obj is Material other && Guid == other.Guid;
 
@@ -1036,17 +1060,13 @@ namespace PMManager
             public static bool operator !=(Material? left, Material? right) =>
                 !Equals(left, right);
 
-            // Стандартная реализация INotifyPropertyChanged
+            // Реализация INotifyPropertyChanged
             public event PropertyChangedEventHandler? PropertyChanged;
 
             protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
             {
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
             }
-
-            // Дополнительный метод с именем класса для ясности (опционально)
-            protected void OnMaterialChanged([CallerMemberName] string? propertyName = null)
-                => OnPropertyChanged(propertyName);
         }
 
         public class LayeredMaterial : IEquatable<LayeredMaterial>, INotifyPropertyChanged
