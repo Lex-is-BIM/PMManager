@@ -12,6 +12,7 @@ using System.Collections.ObjectModel;
 using System.Text.Json.Serialization;
 using System.Reflection;
 using System.Linq;
+using System.Text;
 
 namespace PMManager
 {
@@ -922,17 +923,29 @@ namespace PMManager
             {
                 ILayeredMaterial layeredMaterial = layeredMaterialManager.GetLayeredMaterial(layeredMaterialId);
                 LayeredMaterialGroup group = layeredMaterial.GetIdGroupPair().Group;
-
-                // Используем новый метод для получения названия группы
                 string groupName = LayeredMaterialHelper.GetGroupDisplayName(group);
-
                 IEntity layeredMaterialEntity = layeredMaterials.GetById(layeredMaterialId);
+
+                // Формируем описание слоев
+                var layersDescription = new StringBuilder();
+                IMaterialLayerCollection materialLayerCollection = layeredMaterial.Layers;
+
+                for (int i = 0; i < materialLayerCollection.Count; i++)
+                {
+                    IMaterialLayer materialLayer = materialLayerCollection.Get(i);
+                    IMaterial material = materialLayer.Material;
+                    double thickness = materialLayer.Thickness;
+
+                    if (i > 0) layersDescription.Append(", ");
+                    layersDescription.Append($"{material.Name} - {thickness} мм.");
+                }
 
                 result.Add(new LayeredMaterial
                 {
                     Guid = layeredMaterialEntity.UniqueIdS.ToLower(),
                     Name = layeredMaterial.Name,
-                    LayeredMaterialGroup = groupName
+                    LayeredMaterialGroup = groupName,
+                    LayersDescription = layersDescription.ToString() // Добавляем новое свойство
                 });
             }
 
@@ -1076,6 +1089,7 @@ namespace PMManager
             public required string Guid { get; init; }
             public required string Name { get; init; }
             public required string LayeredMaterialGroup { get; init; }
+            public required string LayersDescription { get; init; }
 
             [JsonIgnore]
             public bool IsSelected

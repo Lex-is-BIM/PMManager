@@ -8,7 +8,7 @@
         mc:Ignorable="d"
         Title="Выбор материалов"
         Height="640"
-        Width="1300"
+        Width="1100"
         WindowStartupLocation="CenterOwner"
         Background="#FFE7EBEE"
         WindowStyle="SingleBorderWindow"
@@ -92,7 +92,7 @@
                         </DataGrid.RowStyle>
 
                         <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="Имя" Width="400" SortMemberPath="Name" CanUserSort="True" SortDirection="Ascending">
+                            <DataGridTemplateColumn Header="Имя" Width="*" SortMemberPath="Name" CanUserSort="True" SortDirection="Ascending">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
@@ -106,15 +106,6 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-
-                            <!--<DataGridTextColumn Header="Уникальный идентификатор" Binding="{Binding Guid}" Width="Auto">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Margin" Value="3,0,0,0"/>
-                                        <Setter Property="VerticalAlignment" Value="Center"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>                             
-                            </DataGridTextColumn>-->
 
                             <DataGridTemplateColumn Header="Цвет" Width="130" CanUserSort="True">
                                 <DataGridTemplateColumn.CellTemplate>
@@ -131,7 +122,7 @@
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
-                            <DataGridTemplateColumn Header="Плотность" Width="130" CanUserSort="True">
+                            <DataGridTemplateColumn Header="Плотность" Width="170" CanUserSort="True">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Grid>
@@ -157,7 +148,7 @@
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
-                            <DataGridTemplateColumn Header="Теплопроводность" Width="130" CanUserSort="True">
+                            <DataGridTemplateColumn Header="Теплопроводность" Width="170" CanUserSort="True">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Grid>
@@ -191,12 +182,14 @@
             <TabItem Header="Многослойные материалы">
                 <Grid Margin="10">
                     <DataGrid x:Name="LayeredMaterialsDataGrid"
-                      AutoGenerateColumns="False"
-                      SelectionMode="Single"
-                      CanUserAddRows="False"
-                      HeadersVisibility="Column"
-                      GridLinesVisibility="None"
-                      Loaded="LayeredMaterialsDataGrid_Loaded">
+                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                          ScrollViewer.CanContentScroll="True"
+                          CanUserResizeColumns="True"
+                          AutoGenerateColumns="False"
+                          SelectionMode="Single"
+                          CanUserAddRows="False"
+                          HeadersVisibility="Column"
+                          GridLinesVisibility="None">
 
                         <DataGrid.Resources>
                             <ContextMenu x:Key="LayeredRowContextMenu">
@@ -237,7 +230,7 @@
                         </DataGrid.RowStyle>
 
                         <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="Имя" Width="400" SortMemberPath="Name">
+                            <DataGridTemplateColumn Header="Имя" Width="420" SortMemberPath="Name">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
@@ -253,13 +246,22 @@
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
-                            <!--<DataGridTextColumn Header="Уникальный идентификатор" 
-                            Binding="{Binding Guid}" 
-                            Width="300"/>-->
-
                             <DataGridTextColumn Header="Тип объекта" 
                             Binding="{Binding LayeredMaterialGroup}" 
-                            Width="130"/>
+                            Width="90"/>
+
+                            <DataGridTemplateColumn Header="Слои" Width="Auto" MinWidth="526">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                            <TextBlock Text="{Binding LayersDescription}" 
+                                                        TextWrapping="NoWrap"
+                                                        Padding="5"
+                                                        Margin="2"/>
+                                        </ScrollViewer>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
 
                         </DataGrid.Columns>
                     </DataGrid>
