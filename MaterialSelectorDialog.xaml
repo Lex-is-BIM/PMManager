@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PMManager"
+        xmlns:converters="clr-namespace:PMManager"
         mc:Ignorable="d"
         Title="Выбор материалов"
         Height="640"
@@ -19,6 +20,7 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/Renga.WPF.Styles;component/Themes/Renga.Implicit.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+            <converters:ColorConverter x:Key="ColorConverter"/>
         </ResourceDictionary>
     </Window.Resources>
 
@@ -102,8 +104,24 @@
                                         <Setter Property="Margin" Value="3,0,0,0"/>
                                         <Setter Property="VerticalAlignment" Value="Center"/>
                                     </Style>
-                                </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn.ElementStyle>                             
                             </DataGridTextColumn>
+
+                            <DataGridTemplateColumn Header="Цвет">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" Margin="3,0,0,0">
+                                            <Rectangle Width="20" Height="20" Margin="0,0,5,0">
+                                                <Rectangle.Fill>
+                                                    <SolidColorBrush Color="{Binding Color, Converter={StaticResource ColorConverter}}"/>
+                                                </Rectangle.Fill>
+                                            </Rectangle>
+                                            <TextBlock Text="{Binding RgbValue}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -181,6 +199,7 @@
                             <DataGridTextColumn Header="Тип объекта" 
                             Binding="{Binding LayeredMaterialGroup}" 
                             Width="200"/>
+
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>

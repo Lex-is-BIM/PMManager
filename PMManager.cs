@@ -870,18 +870,24 @@ namespace PMManager
         private List<Material> GetAllMaterials(IApplication app)
         {
             var materials = app.Project.Materials;
-            var result = new List<Material>(materials.Count); // Задаем начальную емкость
-
-            var objectTypeGuids = ObjectTypeNames.Keys.ToArray();
+            var result = new List<Material>(materials.Count);
+            string colorUuid = "{87d2df84-d69e-495f-a46e-4468185268c3}";
 
             for (int i = 0; i < materials.Count; i++)
             {
                 var material = materials.GetByIndex(i);
-                result.Add(new Material
+                var materialParameters = material as IParameterContainer;
+                IParameter materialColor = materialParameters.GetS(colorUuid);
+                int materialColorInt = materialColor.GetIntValue();
+
+                var newMaterial = new Material
                 {
                     Guid = material.UniqueIdS.ToLower(),
-                    Name = material.Name
-                });
+                    Name = material.Name,
+                    Color = System.Drawing.Color.FromArgb(materialColorInt)
+                };
+
+                result.Add(newMaterial);
             }
 
             return result;
@@ -980,6 +986,7 @@ namespace PMManager
         public class Material : IEquatable<Material>, INotifyPropertyChanged
         {
             private bool _isSelected;
+            private System.Drawing.Color _color;
 
             public required string Guid { get; init; }
             public required string Name { get; init; }
@@ -997,6 +1004,22 @@ namespace PMManager
                     }
                 }
             }
+
+            public System.Drawing.Color Color
+            {
+                get => _color;
+                set
+                {
+                    if (_color != value)
+                    {
+                        _color = value;
+                        OnPropertyChanged();
+                        OnPropertyChanged(nameof(RgbValue)); // Обновляем привязанное свойство
+                    }
+                }
+            }
+
+            public string RgbValue => $"{Color.R}, {Color.G}, {Color.B}";
 
             // Реализация IEquatable<T>
             public override bool Equals(object? obj) =>
