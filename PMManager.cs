@@ -653,21 +653,6 @@ namespace PMManager
             return button;
         }
 
-        private void SetMaterialSelectionFlags(List<Material> materials, HashSet<string> savedGuids)
-        {
-            foreach (var material in materials)
-            {
-                material.IsSelected = !savedGuids.Contains(material.Guid);
-            }
-        }
-
-        private void SetLayeredMaterialSelectionFlags(List<LayeredMaterial> layeredMaterials, HashSet<string> savedGuids)
-        {
-            foreach (var material in layeredMaterials)
-            {
-                material.IsSelected = !savedGuids.Contains(material.Guid);
-            }
-        }
 
         // 9. Методы загрузки данных
         private void InitializeProjectData()
@@ -922,9 +907,11 @@ namespace PMManager
             foreach (int layeredMaterialId in layeredMaterialIds)
             {
                 ILayeredMaterial layeredMaterial = layeredMaterialManager.GetLayeredMaterial(layeredMaterialId);
-                LayeredMaterialGroup group = layeredMaterial.GetIdGroupPair().Group;
-                string groupName = LayeredMaterialHelper.GetGroupDisplayName(group);
                 IEntity layeredMaterialEntity = layeredMaterials.GetById(layeredMaterialId);
+
+                // Получаем информацию о группе
+                var groupPair = layeredMaterial.GetIdGroupPair();
+                string groupName = LayeredMaterialHelper.GetGroupDisplayName(groupPair.Group);
 
                 // Формируем описание слоев
                 var layersDescription = new StringBuilder();
@@ -933,11 +920,11 @@ namespace PMManager
                 for (int i = 0; i < materialLayerCollection.Count; i++)
                 {
                     IMaterialLayer materialLayer = materialLayerCollection.Get(i);
-                    IMaterial material = materialLayer.Material;
+                    string materialName = materialLayer.Material?.Name ?? "(нет)";
                     double thickness = materialLayer.Thickness;
 
                     if (i > 0) layersDescription.Append(", ");
-                    layersDescription.Append($"{material.Name} - {thickness} мм.");
+                    layersDescription.Append($"{materialName} - {thickness} мм.");
                 }
 
                 result.Add(new LayeredMaterial
@@ -945,7 +932,7 @@ namespace PMManager
                     Guid = layeredMaterialEntity.UniqueIdS.ToLower(),
                     Name = layeredMaterial.Name,
                     LayeredMaterialGroup = groupName,
-                    LayersDescription = layersDescription.ToString() // Добавляем новое свойство
+                    LayersDescription = layersDescription.ToString()
                 });
             }
 
