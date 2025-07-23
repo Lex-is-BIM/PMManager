@@ -1,19 +1,11 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using static PMManager.PMManager;
 
 namespace PMManager
@@ -170,45 +162,28 @@ namespace PMManager
 
         private void MaterialsDataGrid_Sorting(object sender, DataGridSortingEventArgs e)
         {
-            try
+            DataGridColumn column = e.Column;
+            ListSortDirection newDir = column.SortDirection == ListSortDirection.Ascending
+                ? ListSortDirection.Descending
+                : ListSortDirection.Ascending;
+
+            var view = CollectionViewSource.GetDefaultView(MaterialsDataGrid.ItemsSource);
+
+            if (view != null)
             {
-                DataGridColumn column = e.Column;
-                ListSortDirection newDir = ListSortDirection.Ascending;
+                view.SortDescriptions.Clear();
 
-                if (column.SortDirection == ListSortDirection.Ascending)
-                    newDir = ListSortDirection.Descending;
+                string sortMemberPath = column.SortMemberPath == "Color"
+                    ? "RgbValue"
+                    : column.SortMemberPath;
 
-                var view = CollectionViewSource.GetDefaultView(MaterialsDataGrid.ItemsSource);
-                if (view != null)
-                {
-                    view.SortDescriptions.Clear();
-
-                    // Для цвета используем специальное преобразование
-                    if (column.SortMemberPath == "Color")
-                    {
-                        view.SortDescriptions.Add(
-                            new SortDescription(
-                                "RgbValue", // Сортируем по строковому представлению RGB
-                                newDir));
-                    }
-                    else
-                    {
-                        view.SortDescriptions.Add(
-                            new SortDescription(
-                                column.SortMemberPath,
-                                newDir));
-                    }
-
-                    column.SortDirection = newDir;
-                }
-
-                e.Handled = true;
+                view.SortDescriptions.Add(new SortDescription(sortMemberPath, newDir));
+                column.SortDirection = newDir;
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка сортировки: {ex.Message}");
-            }
+
+            e.Handled = true;
         }
+
 
         // Добавляем компаратор для цвета
         public class ColorComparer : IComparer
@@ -246,7 +221,5 @@ namespace PMManager
         {
             InitializeLayeredMaterialsSorting();
         }
-
-
     }
 }
