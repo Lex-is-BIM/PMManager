@@ -107,7 +107,11 @@
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
-                            <DataGridTemplateColumn Header="Цвет" Width="130" CanUserSort="True" SortMemberPath="Color">
+                            <DataGridTemplateColumn 
+                                    Header="Цвет" 
+                                    Width="130" 
+                                    CanUserSort="True"
+                                    SortMemberPath="Color">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" Margin="3,0,0,0">
@@ -121,6 +125,7 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
+
 
                             <DataGridTemplateColumn Header="Плотность" Width="170" CanUserSort="True" SortMemberPath="Density">
                                 <DataGridTemplateColumn.CellTemplate>

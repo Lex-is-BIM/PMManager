@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -169,23 +170,63 @@ namespace PMManager
 
         private void MaterialsDataGrid_Sorting(object sender, DataGridSortingEventArgs e)
         {
-            DataGridColumn column = e.Column;
-            ListSortDirection newDir = ListSortDirection.Ascending;
+            try
+            {
+                DataGridColumn column = e.Column;
+                ListSortDirection newDir = ListSortDirection.Ascending;
 
-            // Определяем направление сортировки
-            if (column.SortDirection == ListSortDirection.Ascending)
-                newDir = ListSortDirection.Descending;
+                if (column.SortDirection == ListSortDirection.Ascending)
+                    newDir = ListSortDirection.Descending;
 
-            var view = CollectionViewSource.GetDefaultView(MaterialsDataGrid.ItemsSource);
-            view.SortDescriptions.Clear();
+                var view = CollectionViewSource.GetDefaultView(MaterialsDataGrid.ItemsSource);
+                if (view != null)
+                {
+                    view.SortDescriptions.Clear();
 
-            // Добавляем описание сортировки
-            view.SortDescriptions.Add(
-                new SortDescription(
-                    column.SortMemberPath,
-                    newDir));
+                    // Для цвета используем специальное преобразование
+                    if (column.SortMemberPath == "Color")
+                    {
+                        view.SortDescriptions.Add(
+                            new SortDescription(
+                                "RgbValue", // Сортируем по строковому представлению RGB
+                                newDir));
+                    }
+                    else
+                    {
+                        view.SortDescriptions.Add(
+                            new SortDescription(
+                                column.SortMemberPath,
+                                newDir));
+                    }
 
-            e.Handled = true; // Важно установить true, чтобы сортировка сработала
+                    column.SortDirection = newDir;
+                }
+
+                e.Handled = true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка сортировки: {ex.Message}");
+            }
+        }
+
+        // Добавляем компаратор для цвета
+        public class ColorComparer : IComparer
+        {
+            public int Compare(object x, object y)
+            {
+                Color color1 = (Color)x;
+                Color color2 = (Color)y;
+
+                // Сравниваем RGB значения
+                int result = color1.R.CompareTo(color2.R);
+                if (result == 0)
+                    result = color1.G.CompareTo(color2.G);
+                if (result == 0)
+                    result = color1.B.CompareTo(color2.B);
+
+                return result;
+            }
         }
 
         private void InitializeLayeredMaterialsSorting()
@@ -205,5 +246,7 @@ namespace PMManager
         {
             InitializeLayeredMaterialsSorting();
         }
+
+
     }
 }
