@@ -169,7 +169,23 @@ namespace PMManager
 
         private void MaterialsDataGrid_Sorting(object sender, DataGridSortingEventArgs e)
         {
-            e.Handled = false;
+            DataGridColumn column = e.Column;
+            ListSortDirection newDir = ListSortDirection.Ascending;
+
+            // Определяем направление сортировки
+            if (column.SortDirection == ListSortDirection.Ascending)
+                newDir = ListSortDirection.Descending;
+
+            var view = CollectionViewSource.GetDefaultView(MaterialsDataGrid.ItemsSource);
+            view.SortDescriptions.Clear();
+
+            // Добавляем описание сортировки
+            view.SortDescriptions.Add(
+                new SortDescription(
+                    column.SortMemberPath,
+                    newDir));
+
+            e.Handled = true; // Важно установить true, чтобы сортировка сработала
         }
 
         private void InitializeLayeredMaterialsSorting()
