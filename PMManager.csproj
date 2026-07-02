@@ -1,33 +1,60 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net8.0-windows</TargetFramework>
-    <Nullable>enable</Nullable>
-    <UseWPF>true</UseWPF>
-    <ImplicitUsings>enable</ImplicitUsings>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net8.0-windows</TargetFramework>
+		<Nullable>enable</Nullable>
+		<UseWPF>true</UseWPF>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<PlatformTarget>x64</PlatformTarget>
+
+		<!-- Сборка в папку плагина -->
+		<OutputPath>C:\Program Files\Renga Professional\Plugins\PMManager\</OutputPath>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+		<AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+	</PropertyGroup>
+
 	<ItemGroup>
-		<COMFileReference Include="..\..\RengaSDK\tlb\RengaCOMAPI.tlb">
-		</COMFileReference>
+		<COMFileReference Include="..\..\_SDK\tlb\RengaCOMAPI.tlb" />
 	</ItemGroup>
+
 	<ItemGroup>
 		<Reference Include="Renga.NET8.PluginUtility">
-			<HintPath>..\..\RengaSDK\Net\Renga.NET8.PluginUtility.dll</HintPath>
+			<HintPath>..\..\_SDK\Net\Renga.NET8.PluginUtility.dll</HintPath>
+			<Private>false</Private>
 		</Reference>
 		<Reference Include="Renga.WPF.Styles">
-		  <HintPath>..\..\RengaSDK\WpfStyle\Renga.WPF.Styles.dll</HintPath>
+			<HintPath>..\..\_SharedLibs\Renga.WPF.Styles.dll</HintPath>
+			<Private>false</Private>
+		</Reference>
+		<Reference Include="Renga.WPF.Windows">
+			<HintPath>..\..\_SharedLibs\Renga.WPF.Windows.dll</HintPath>
+			<Private>false</Private>
 		</Reference>
 	</ItemGroup>
+
 	<ItemGroup>
-	  <None Update="i24_PM_Materials.png">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </None>
-	  <None Update="i24_PM_Propertis.png">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </None>
-	  <None Update="PMManager.rndesc">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </None>
+		<None Update="PMManager.rndesc">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="i24_PM_Materials.png">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="i24_PM_Propertis.png">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 	</ItemGroup>
+
+	<!-- Копируем зависимости автоматически -->
+	<Target Name="CopyDependencies" AfterTargets="Build">
+		<Copy SourceFiles="..\..\_SDK\Net\Renga.NET8.PluginUtility.dll"
+			  DestinationFolder="$(OutputPath)"
+			  SkipUnchangedFiles="true" />
+		<Copy SourceFiles="..\..\_SharedLibs\Renga.WPF.Styles.dll"
+			  DestinationFolder="$(OutputPath)"
+			  SkipUnchangedFiles="true" />
+		<Copy SourceFiles="..\..\_SharedLibs\Renga.WPF.Windows.dll"
+			  DestinationFolder="$(OutputPath)"
+			  SkipUnchangedFiles="true" />
+	</Target>
 
 </Project>
