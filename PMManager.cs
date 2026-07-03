@@ -211,10 +211,7 @@ namespace PMManager
             // НОВЫЕ: кнопки экспорта/импорта исключений (заглушки)
             IAction exportExclusionsAction = CreateAction(ui, "Экспорт исключений", ExportExclusions);
 
-            IAction importExclusionsAction = CreateAction(ui, "Импорт исключений", () =>
-            {
-                ShowMessage("Заглушка", "Метод ImportExclusions() будет вызван");
-            });
+            IAction importExclusionsAction = CreateAction(ui, "Импорт исключений", ImportExclusions);
 
             // Обновляем DropDownButton - добавляем две новые кнопки
             var dropDownButton = CreateDropDownButton(
@@ -410,11 +407,8 @@ namespace PMManager
             }
         }
 
-
         /// Экспорт списка исключений свойств в JSON файл
-        /// <summary>
-        /// Экспорт списка исключений свойств в JSON файл
-        /// </summary>
+ 
         private void ExportExclusions()
         {
             try
@@ -464,6 +458,84 @@ namespace PMManager
             catch (Exception ex)
             {
                 ShowMessage("Ошибка экспорта", $"Ошибка при экспорте исключений: {ex.Message}");
+            }
+        }
+
+
+        /// Импорт списка исключений свойств из JSON файла
+        private void ImportExclusions()
+        {
+            try
+            {
+                var openFileDialog = new OpenFileDialog
+                {
+                    DefaultExt = ".json",
+                    Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
+                    Title = "Выберите файл исключений для импорта"
+                };
+
+                if (openFileDialog.ShowDialog() != true)
+                    return;
+
+                string jsonString = File.ReadAllText(openFileDialog.FileName);
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
+
+                var importData = JsonSerializer.Deserialize<ExclusionExportData>(jsonString, options);
+
+                if (importData == null || importData.Exclusions.Count == 0)
+                {
+                    ShowMessage("Ошибка импорта", "Файл не содержит данных об исключениях");
+                    return;
+                }
+
+                var allProperties = GetAllProperties(_app);
+                var foundProperties = new List<Property>();
+                var missingProperties = new List<string>();
+
+                foreach (var item in importData.Exclusions)
+                {
+                    var property = allProperties.FirstOrDefault(p =>
+                        p.Guid.Equals(item.Guid, StringComparison.OrdinalIgnoreCase));
+
+                    if (property != null)
+                    {
+                        foundProperties.Add(property);
+                    }
+                    else
+                    {
+                        var propertyByName = allProperties.FirstOrDefault(p => p.Name == item.Name);
+                        if (propertyByName != null)
+                        {
+                            foundProperties.Add(propertyByName);
+                        }
+                        else
+                        {
+                            missingProperties.Add(item.Name);
+                        }
+                    }
+                }
+
+                _savedProperties.Clear();
+                _savedProperties.AddRange(foundProperties);
+
+                string message = $"Импортировано {foundProperties.Count} " +
+                                 $"{GetNounForm(foundProperties.Count, "исключение", "исключения", "исключений")}";
+
+                if (missingProperties.Count > 0)
+                {
+                    message += $"\nПропущено {missingProperties.Count} " +
+                               $"{GetNounForm(missingProperties.Count, "свойство", "свойства", "свойств")} (отсутствуют в проекте)";
+                }
+
+                ShowMessage("Импорт завершен", message);
+            }
+            catch (Exception ex)
+            {
+                ShowMessage("Ошибка импорта", $"Ошибка при импорте исключений: {ex.Message}");
             }
         }
 
