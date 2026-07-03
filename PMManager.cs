@@ -209,10 +209,7 @@ namespace PMManager
             IAction configurePropertiesExclusionAction = CreateAction(ui, "Настройка списка исключений", ConfigurePropertiesExclusion);
 
             // НОВЫЕ: кнопки экспорта/импорта исключений (заглушки)
-            IAction exportExclusionsAction = CreateAction(ui, "Экспорт исключений", () =>
-            {
-                ShowMessage("Заглушка", "Метод ExportExclusions() будет вызван");
-            });
+            IAction exportExclusionsAction = CreateAction(ui, "Экспорт исключений", ExportExclusions);
 
             IAction importExclusionsAction = CreateAction(ui, "Импорт исключений", () =>
             {
@@ -410,6 +407,63 @@ namespace PMManager
             {
                 ShowMessage("Ошибка импорта",
                     $"Ошибка при импорте свойств: {ex.Message}");
+            }
+        }
+
+
+        /// Экспорт списка исключений свойств в JSON файл
+        /// <summary>
+        /// Экспорт списка исключений свойств в JSON файл
+        /// </summary>
+        private void ExportExclusions()
+        {
+            try
+            {
+                if (_savedProperties.Count == 0)
+                {
+                    ShowMessage("Нет исключений", "Список исключений свойств пуст");
+                    return;
+                }
+
+                var exportData = new ExclusionExportData
+                {
+                    Exclusions = _savedProperties.Select(p => new ExclusionItem
+                    {
+                        Guid = p.Guid,
+                        Name = p.Name
+                    }).ToList()
+                };
+
+                var saveFileDialog = new SaveFileDialog
+                {
+                    FileName = "property_exclusions",  // Теперь без timestamp
+                    DefaultExt = ".json",
+                    Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
+                    AddExtension = true,
+                    Title = "Сохранить список исключений"
+                };
+
+                if (saveFileDialog.ShowDialog() != true)
+                    return;
+
+                var options = new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
+
+                string jsonString = JsonSerializer.Serialize(exportData, options);
+                File.WriteAllText(saveFileDialog.FileName, jsonString);
+
+                // Компактное сообщение
+                ShowMessage("Экспорт завершен",
+                    $"Экспортировано {_savedProperties.Count} " +
+                    $"{GetNounForm(_savedProperties.Count, "исключение", "исключения", "исключений")}");
+            }
+            catch (Exception ex)
+            {
+                ShowMessage("Ошибка экспорта", $"Ошибка при экспорте исключений: {ex.Message}");
             }
         }
 
@@ -1152,13 +1206,14 @@ namespace PMManager
 
         public class ExclusionExportData
         {
-            public string Version { get; set; } = "2.2";
-            public DateTime ExportDate { get; set; }
-            public List<string> PropertyGuids { get; set; } = new();
-            public List<string> PropertyNames { get; set; } = new();
+            public List<ExclusionItem> Exclusions { get; set; } = new();
+        }
 
-            [JsonIgnore]
-            public int TotalCount => PropertyGuids.Count;
+        /// Элемент списка исключений свойств
+        public class ExclusionItem
+        {
+            public string Guid { get; set; } = string.Empty;
+            public string Name { get; set; } = string.Empty;
         }
     }
 }
