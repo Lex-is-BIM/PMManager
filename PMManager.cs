@@ -1149,5 +1149,16 @@ namespace PMManager
                 return GroupNames.TryGetValue(group, out string result) ? result : "Неизвестная группа";
             }
         }
+
+        public class ExclusionExportData
+        {
+            public string Version { get; set; } = "2.2";
+            public DateTime ExportDate { get; set; }
+            public List<string> PropertyGuids { get; set; } = new();
+            public List<string> PropertyNames { get; set; } = new();
+
+            [JsonIgnore]
+            public int TotalCount => PropertyGuids.Count;
+        }
     }
 }
