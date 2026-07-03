@@ -1,6 +1,6 @@
 ﻿<RengaPlugin>
 	<Name>PMManager</Name>
-	<Version>2.1</Version>
+	<Version>2.2</Version>
 	<RequiredAPIVersion>2.48</RequiredAPIVersion>
 	<Vendor>Эпов А.Г.</Vendor>
 	<Copyright>Copyright © 2025 Эпов А.Г. Licensed under MIT License.</Copyright>
