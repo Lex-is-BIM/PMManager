@@ -202,13 +202,24 @@ namespace PMManager
 
             IImage propertyImage = LoadPluginImage(ui, "i24_PM_Propertis.png");
 
-            // Создаем действия
+            // Существующие действия
             IAction removePropertiesAction = CreateAction(ui, "Удалить свойства", RemoveProperties);
             IAction exportPropertiesAction = CreateAction(ui, "Экспортировать свойства", ExportProperties);
             IAction importPropertiesAction = CreateAction(ui, "Импортировать свойства", ImportProperties);
             IAction configurePropertiesExclusionAction = CreateAction(ui, "Настройка списка исключений", ConfigurePropertiesExclusion);
 
-            // Создаем DropDownButton 
+            // НОВЫЕ: кнопки экспорта/импорта исключений (заглушки)
+            IAction exportExclusionsAction = CreateAction(ui, "Экспорт исключений", () =>
+            {
+                ShowMessage("Заглушка", "Метод ExportExclusions() будет вызван");
+            });
+
+            IAction importExclusionsAction = CreateAction(ui, "Импорт исключений", () =>
+            {
+                ShowMessage("Заглушка", "Метод ImportExclusions() будет вызван");
+            });
+
+            // Обновляем DropDownButton - добавляем две новые кнопки
             var dropDownButton = CreateDropDownButton(
                 ui,
                 "Операции со свойствами",
@@ -216,11 +227,12 @@ namespace PMManager
                 removePropertiesAction,
                 exportPropertiesAction,
                 importPropertiesAction,
-                configurePropertiesExclusionAction);
+                configurePropertiesExclusionAction,
+                exportExclusionsAction,    // Новая
+                importExclusionsAction     // Новая
+            );
 
-            // Добавляем DropDownButton на панель
             panelExtension.AddDropDownButton(dropDownButton);
-
             ui.AddExtensionToPrimaryPanel(panelExtension);
         }
 
